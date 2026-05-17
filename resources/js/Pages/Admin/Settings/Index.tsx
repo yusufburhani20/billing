@@ -27,6 +27,7 @@ export default function Index({ settings }: Props) {
         address: settings.address || '',
         rt_rw: settings.rt_rw || '',
         phone: settings.phone || '',
+        favicon: null as File | null,
     });
 
     useEffect(() => {
@@ -131,6 +132,42 @@ export default function Index({ settings }: Props) {
                                             className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-700 border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-indigo-500 dark:text-white"
                                             placeholder="Jl. Raya Pagendingan No. 1..."
                                         ></textarea>
+                                    </div>
+                                    <div className="md:col-span-2 border-t border-gray-100 dark:border-gray-700 pt-6">
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 block ml-1">Favicon Aplikasi (.ico, .png, .jpg)</label>
+                                        <div className="flex items-center gap-6">
+                                            {/* Preview */}
+                                            <div className="w-16 h-16 bg-gray-50 dark:bg-gray-700 rounded-2xl border-2 border-dashed border-gray-200 dark:border-gray-600 flex items-center justify-center overflow-hidden shrink-0">
+                                                {data.favicon ? (
+                                                    <img src={URL.createObjectURL(data.favicon)} alt="Preview Favicon" className="w-10 h-10 object-contain" />
+                                                ) : settings.favicon ? (
+                                                    <img src={`/${settings.favicon}`} alt="Current Favicon" className="w-10 h-10 object-contain" />
+                                                ) : (
+                                                    <Globe className="w-6 h-6 text-gray-300 dark:text-gray-600" />
+                                                )}
+                                            </div>
+                                            
+                                            {/* File Input button */}
+                                            <div className="flex-1">
+                                                <input 
+                                                    type="file" 
+                                                    id="favicon-upload" 
+                                                    accept=".ico,.png,.jpg,.jpeg"
+                                                    onChange={e => {
+                                                        const file = e.target.files?.[0];
+                                                        if (file) setData('favicon', file);
+                                                    }}
+                                                    className="hidden"
+                                                />
+                                                <label 
+                                                    htmlFor="favicon-upload"
+                                                    className="inline-block px-6 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-200 text-[10px] font-black uppercase tracking-widest rounded-xl cursor-pointer transition-all"
+                                                >
+                                                    Pilih File Favicon
+                                                </label>
+                                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mt-1.5">Rekomendasi ukuran: 32x32 atau 64x64 piksel.</p>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

@@ -20,12 +20,29 @@ class SettingController extends Controller
 
     public function update(Request $request)
     {
-        $data = $request->all();
+        $data = $request->except(['favicon']);
         
         foreach ($data as $key => $value) {
             Setting::updateOrCreate(
                 ['key' => $key],
                 ['value' => $value]
+            );
+        }
+
+        if ($request->hasFile('favicon')) {
+            $file = $request->file('favicon');
+            // Delete old favicon file if exists
+            $oldFavicon = Setting::getValue('favicon');
+            if ($oldFavicon && file_exists(public_path($oldFavicon)) && basename($oldFavicon) !== 'favicon.ico') {
+                @unlink(public_path($oldFavicon));
+            }
+            
+            $filename = 'favicon_' . time() . '.' . $file->getClientOriginalExtension();
+            $file->move(public_path('uploads/settings'), $filename);
+            
+            Setting::updateOrCreate(
+                ['key' => 'favicon'],
+                ['value' => 'uploads/settings/' . $filename]
             );
         }
 

@@ -10,4 +10,9 @@ class Setting extends Model
         'key',
         'value',
     ];
+
+    public static function getValue($key, $default = null)
+    {
+        return self::where('key', $key)->value('value') ?? $default;
+    }
 }
