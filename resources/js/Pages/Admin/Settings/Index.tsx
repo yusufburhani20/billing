@@ -34,7 +34,7 @@ export default function Index({ settings }: Props) {
         if (activeTab === 'whatsapp') {
             const checkStatus = async () => {
                 try {
-                    const response = await axios.get('http://localhost:3001/status');
+                    const response = await axios.get(route('admin.settings.whatsapp-status'));
                     setWaStatus(response.data.status);
                     setQrCode(response.data.qr);
                 } catch (e) {

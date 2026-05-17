@@ -62,6 +62,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     // Settings
     Route::get('settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('settings.index');
     Route::post('settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
+    Route::get('settings/whatsapp-status', [\App\Http\Controllers\Admin\SettingController::class, 'getWhatsappStatus'])->name('settings.whatsapp-status');
 });
 
 // Customer Routes

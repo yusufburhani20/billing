@@ -33,4 +33,17 @@ class SettingController extends Controller
 
         return redirect()->back()->with('message', 'Settings updated successfully.');
     }
+
+    public function getWhatsappStatus()
+    {
+        try {
+            $response = \Illuminate\Support\Facades\Http::timeout(3)->get('http://localhost:3001/status');
+            if ($response->successful()) {
+                return response()->json($response->json());
+            }
+            return response()->json(['status' => 'disconnected', 'qr' => null]);
+        } catch (\Exception $e) {
+            return response()->json(['status' => 'disconnected', 'qr' => null]);
+        }
+    }
 }
