@@ -1,0 +1,96 @@
+<?php
+
+use App\Http\Controllers\ProfileController;
+use Illuminate\Foundation\Application;
+use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
+
+Route::get('/', function () {
+    return redirect()->route('login');
+});
+
+Route::get('/dashboard', function () {
+    if (auth()->user()->role === 'admin') {
+        return redirect()->route('admin.dashboard');
+    }
+    return redirect()->route('customer.dashboard');
+})->middleware(['auth', 'verified'])->name('dashboard');
+
+// Admin Routes
+Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
+    
+    // Router Management
+    Route::resource('routers', \App\Http\Controllers\Admin\RouterController::class);
+    Route::post('routers/{router}/test', [\App\Http\Controllers\Admin\RouterController::class, 'testConnection'])->name('routers.test');
+
+    // Package Management
+    Route::resource('packages', \App\Http\Controllers\Admin\PackageController::class);
+
+    // Mikrotik Pools Management
+    Route::resource('mikrotik-pools', \App\Http\Controllers\Admin\MikrotikPoolController::class);
+
+    // Mikrotik Profiles Management
+    Route::resource('mikrotik-profiles', \App\Http\Controllers\Admin\MikrotikProfileController::class);
+
+    // Customer Management
+    Route::resource('customers', \App\Http\Controllers\Admin\CustomerController::class);
+
+    // Invoice Management
+    Route::resource('invoices', \App\Http\Controllers\Admin\InvoiceController::class);
+    Route::get('invoices/{invoice}/print', [\App\Http\Controllers\Admin\InvoiceController::class, 'print'])->name('invoices.print');
+    Route::post('invoices/{invoice}/pay', [\App\Http\Controllers\Admin\InvoiceController::class, 'markAsPaid'])->name('invoices.pay');
+
+    // User Management
+    Route::resource('users', \App\Http\Controllers\Admin\UserController::class);
+
+    // Ticket Management
+    Route::resource('tickets', \App\Http\Controllers\Admin\TicketController::class);
+    Route::post('tickets/{ticket}/reply', [\App\Http\Controllers\Admin\TicketController::class, 'reply'])->name('tickets.reply');
+    Route::patch('tickets/{ticket}/status', [\App\Http\Controllers\Admin\TicketController::class, 'updateStatus'])->name('tickets.status');
+
+    // PPPoE Management
+    Route::get('pppoe', [\App\Http\Controllers\Admin\PppoeController::class, 'index'])->name('pppoe.index');
+    Route::post('pppoe/{customer}/isolate', [\App\Http\Controllers\Admin\PppoeController::class, 'isolate'])->name('pppoe.isolate');
+    Route::post('pppoe/{customer}/reconnect', [\App\Http\Controllers\Admin\PppoeController::class, 'reconnect'])->name('pppoe.reconnect');
+    Route::post('pppoe/{customer}/sync', [\App\Http\Controllers\Admin\PppoeController::class, 'sync'])->name('pppoe.sync');
+
+    // Reporting
+    Route::get('reports/excel', [\App\Http\Controllers\Admin\ReportController::class, 'exportExcel'])->name('reports.excel');
+    Route::get('reports/pdf', [\App\Http\Controllers\Admin\ReportController::class, 'exportPDF'])->name('reports.pdf');
+
+    // Settings
+    Route::get('settings', [\App\Http\Controllers\Admin\SettingController::class, 'index'])->name('settings.index');
+    Route::post('settings', [\App\Http\Controllers\Admin\SettingController::class, 'update'])->name('settings.update');
+});
+
+// Customer Routes
+Route::middleware(['auth'])->prefix('customer')->name('customer.')->group(function () {
+    Route::get('/dashboard', [\App\Http\Controllers\Customer\DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/packages', [\App\Http\Controllers\Customer\DashboardController::class, 'packages'])->name('packages');
+    Route::post('/select-package', [\App\Http\Controllers\Customer\DashboardController::class, 'selectPackage'])->name('select-package');
+    Route::post('/invoices/{invoice}/snap-token', [\App\Http\Controllers\PaymentController::class, 'getSnapToken'])->name('payment.snap-token');
+
+    // Invoices
+    Route::get('/invoices', [\App\Http\Controllers\Customer\InvoiceController::class, 'index'])->name('invoices.index');
+
+    // Ticket Management
+    Route::resource('tickets', \App\Http\Controllers\Customer\TicketController::class);
+    Route::post('tickets/{ticket}/reply', [\App\Http\Controllers\Customer\TicketController::class, 'reply'])->name('tickets.reply');
+});
+
+// Midtrans Callback (Exempt from CSRF in bootstrap/app.php)
+Route::post('/payments/callback', [\App\Http\Controllers\PaymentController::class, 'callback'])->name('payment.callback');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Notifications
+    Route::get('/notifications', [App\Http\Controllers\Admin\NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/mark-all-read', [App\Http\Controllers\Admin\NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
+    Route::post('/notifications/{id}/mark-read', [App\Http\Controllers\Admin\NotificationController::class, 'markAsRead'])->name('notifications.markRead');
+});
+
+require __DIR__.'/auth.php';
