@@ -45,12 +45,12 @@ class InvoiceCreatedNotification extends Notification
             ->line('Tagihan internet Anda untuk periode ini telah terbit.')
             ->line('Nomor Tagihan: ' . $this->invoice->invoice_number)
             ->line('Jumlah: Rp ' . number_format($this->invoice->amount, 0, ',', '.'))
-            ->line('Jatuh Tempo: ' . $this->invoice->due_date->format('d F Y'))
+            ->line('Jatuh Tempo: ' . $this->invoice->due_date->format('d M Y'))
             ->action('Lihat Tagihan & Bayar', $url)
+            ->line('Mohon lakukan pembayaran sebelum tanggal jatuh tempo untuk menghindari isolasi layanan.')
+            ->line('Terima kasih telah menggunakan layanan Idrisiyyah Net!')
             ->attachData($pdfData, 'invoice_' . $this->invoice->invoice_number . '.pdf', [
                 'mime' => 'application/pdf',
-            ])
-            ->line('Mohon lakukan pembayaran sebelum tanggal jatuh tempo untuk menghindari isolasi layanan.')
-            ->line('Terima kasih telah menggunakan layanan Idrisiyyah Net!');
+            ]);
     }
 }
