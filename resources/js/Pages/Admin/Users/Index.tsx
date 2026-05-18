@@ -88,35 +88,32 @@ export default function Index({ users }: Props) {
     return (
         <AuthenticatedLayout
             header={
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h2 className="text-xl font-black text-gray-800 dark:text-gray-200 uppercase tracking-tight">
-                            Manajemen <span className="text-indigo-600">User</span>
-                        </h2>
-                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Kelola Admin dan Pelanggan sistem</p>
-                    </div>
-                    <button 
-                        onClick={openCreateModal}
-                        className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 dark:transition-all active:scale-95"
-                    >
-                        <UserPlus className="w-4 h-4" /> Tambah User
-                    </button>
-                </div>
+                <h2 className="text-xl font-black text-gray-800 dark:text-gray-200 uppercase tracking-tight">
+                    Manajemen User
+                </h2>
             }
         >
             <Head title="Manajemen User" />
 
             <div className="space-y-6">
-                {/* Search Bar */}
-                <div className="relative max-w-md">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                    <input 
-                        type="text" 
-                        placeholder="Cari nama atau email..." 
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-12 pr-4 py-4 bg-white dark:bg-gray-800 border-none rounded-[1.5rem] text-xs font-bold dark:focus:ring-2 focus:ring-indigo-500 dark:text-white transition-all"
-                    />
+                {/* Action Bar */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div className="relative max-w-md w-full">
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                        <input 
+                            type="text" 
+                            placeholder="Cari nama atau email..." 
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            className="w-full pl-12 pr-4 py-4 bg-white dark:bg-gray-800 border-none rounded-[1.5rem] text-xs font-bold dark:focus:ring-2 focus:ring-indigo-500 dark:text-white transition-all shadow-sm"
+                        />
+                    </div>
+                    <button 
+                        onClick={openCreateModal}
+                        className="flex items-center gap-2 bg-indigo-600 text-white px-6 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 dark:transition-all active:scale-95 shadow-lg shadow-indigo-600/20 whitespace-nowrap"
+                    >
+                        <UserPlus className="w-4 h-4" /> Tambah User
+                    </button>
                 </div>
 
                 {/* User List */}

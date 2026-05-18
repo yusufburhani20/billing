@@ -91,12 +91,9 @@ export default function Dashboard({ stats, revenue_chart, daily_revenue_chart }:
     return (
         <AuthenticatedLayout
             header={
-                <div>
-                    <h2 className="text-xl font-black text-gray-800 dark:text-gray-200 uppercase tracking-tight">
-                        Ringkasan <span className="text-indigo-600">Performa</span>
-                    </h2>
-                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">Pantau perkembangan bisnis internet Anda hari ini</p>
-                </div>
+                <h2 className="text-xl font-black text-gray-800 dark:text-gray-200 uppercase tracking-tight">
+                    Beranda
+                </h2>
             }
         >
             <Head title="Dashboard" />

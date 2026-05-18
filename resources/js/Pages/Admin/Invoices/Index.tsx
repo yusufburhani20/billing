@@ -194,7 +194,7 @@ export default function Index({ invoices, activeCustomers = [] }: Props) {
         <AuthenticatedLayout
             header={
                 <h2 className="text-xl font-black text-gray-800 dark:text-gray-200 uppercase tracking-tight">
-                    Billing <span className="text-indigo-600">Invoices</span>
+                    Data Tagihan
                 </h2>
             }
         >
