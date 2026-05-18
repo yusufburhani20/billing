@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use App\Models\Package;
 use App\Models\Ticket;
 use App\Services\WhatsAppService;
+use App\Notifications\InvoiceCreatedNotification;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
@@ -104,6 +105,11 @@ class DashboardController extends Controller
             'period_end' => now()->endOfMonth(),
             'due_date' => now()->setDay(20)->startOfDay(),
         ]);
+
+        // Send Email Notification
+        if ($request->user() && $request->user()->email) {
+            $request->user()->notify(new InvoiceCreatedNotification($invoice));
+        }
 
         // Send WA Notification
         if ($customer->phone) {

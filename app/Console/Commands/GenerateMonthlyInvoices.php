@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use App\Models\Customer;
 use App\Models\Invoice;
 use App\Services\WhatsAppService;
+use App\Notifications\InvoiceCreatedNotification;
 use Illuminate\Support\Str;
 
 class GenerateMonthlyInvoices extends Command
@@ -47,6 +48,11 @@ class GenerateMonthlyInvoices extends Command
                     'due_date' => now()->setDay(20)->startOfDay(),
                 ]);
                 $count++;
+
+                // SEND EMAIL NOTIFICATION
+                if ($customer->user && $customer->user->email) {
+                    $customer->user->notify(new InvoiceCreatedNotification($invoice));
+                }
 
                 // SEND WHATSAPP NOTIFICATION
                 if ($customer->phone) {
