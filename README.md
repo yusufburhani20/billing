@@ -1,3 +1,11 @@
+# 📜 RIWAYAT PENGEMBANGAN & PERCAKAPAN (DEVELOPMENT HISTORY)
+> **Catatan Developer:** Seluruh proses diskusi, keputusan arsitektur, dan perubahan sistem tercatat secara real-time di:
+> 🔗 **[Buka Catatan Pengembangan & Sesi Chat (DEVELOPMENT_HISTORY.md)](file:///d:/web/billing/DEVELOPMENT_HISTORY.md)**
+>
+> *Buka file di atas di VS Code untuk melihat rangkuman perjalanan coding dari awal hingga akhir!*
+
+---
+
 # 🌐 Idrisiyyah Net - Sistem Manajemen Billing & Mikrotik Terintegrasi
 
 Sistem manajemen billing dan administrasi pelanggan internet (RT/RW Net / Local ISP) modern yang terintegrasi secara dinamis dengan **Mikrotik RouterOS API**, **Midtrans Payment Gateway**, dan **WhatsApp Gateway Lokal (Baileys)**. 
