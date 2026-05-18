@@ -28,8 +28,23 @@ class InvoiceController extends Controller
 
     public function index()
     {
+        $activeCustomers = Customer::with(['user', 'package'])
+            ->whereNotNull('package_id')
+            ->where('status', '!=', 'inactive')
+            ->get()
+            ->map(function ($c) {
+                return [
+                    'id' => $c->id,
+                    'name' => $c->user->name ?? 'Unknown',
+                    'customer_code' => $c->customer_code,
+                    'package_name' => $c->package->name ?? 'No Package',
+                    'price' => $c->package->price ?? 0,
+                ];
+            });
+
         return Inertia::render('Admin/Invoices/Index', [
-            'invoices' => Invoice::with(['customer.user', 'customer.package', 'customer.router', 'payments'])->latest()->get()
+            'invoices' => Invoice::with(['customer.user', 'customer.package', 'customer.router', 'payments'])->latest()->get(),
+            'activeCustomers' => $activeCustomers
         ]);
     }
 
@@ -50,7 +65,7 @@ class InvoiceController extends Controller
             ->exists();
 
         if ($exists) {
-            return redirect()->back()->withErrors(['message' => 'Tagihan untuk bulan ini sudah ada.']);
+            return redirect()->back()->with('error', 'Tagihan untuk pelanggan ini pada bulan & tahun tersebut sudah diterbitkan.');
         }
 
         $invoice = Invoice::create([
@@ -62,7 +77,11 @@ class InvoiceController extends Controller
 
         // 1. KIRIM NOTIFIKASI EMAIL
         if ($customer->user && $customer->user->email) {
-            $customer->user->notify(new InvoiceCreatedNotification($invoice));
+            try {
+                $customer->user->notify(new InvoiceCreatedNotification($invoice));
+            } catch (\Exception $e) {
+                \Log::error('Error sending single manual invoice email: ' . $e->getMessage());
+            }
         }
 
         // 2. KIRIM NOTIFIKASI WHATSAPP
@@ -77,7 +96,64 @@ class InvoiceController extends Controller
             $this->wa->sendMessage($customer->phone, $message);
         }
 
-        return redirect()->back()->with('message', 'Tagihan berhasil dibuat dan dikirim.');
+        return redirect()->back()->with('message', 'Tagihan berhasil dibuat dan dikirim ke pelanggan.');
+    }
+
+    public function bulkGenerate(Request $request)
+    {
+        $month = now()->month;
+        $year = now()->year;
+
+        $customers = Customer::with(['user', 'package'])
+            ->whereNotNull('package_id')
+            ->where('status', '!=', 'inactive')
+            ->get();
+
+        $count = 0;
+        foreach ($customers as $customer) {
+            // Check if invoice already exists for this month/year
+            $exists = Invoice::where('customer_id', $customer->id)
+                ->whereMonth('created_at', $month)
+                ->whereYear('created_at', $year)
+                ->exists();
+
+            if (!$exists) {
+                $invoice = Invoice::create([
+                    'customer_id' => $customer->id,
+                    'amount' => $customer->package->price,
+                    'status' => 'unpaid',
+                    'due_date' => now()->setDay(20)->startOfDay(),
+                ]);
+                $count++;
+
+                // SEND EMAIL NOTIFICATION
+                if ($customer->user && $customer->user->email) {
+                    try {
+                        $customer->user->notify(new InvoiceCreatedNotification($invoice));
+                        usleep(500000); // Protective throttling delay
+                    } catch (\Exception $e) {
+                        \Log::error('Error sending bulk generated invoice email: ' . $e->getMessage());
+                    }
+                }
+
+                // SEND WHATSAPP NOTIFICATION
+                if ($customer->phone) {
+                    $message = "Halo *{$customer->user->name}*,\n\n" .
+                               "Tagihan internet **Idrisiyyah Net** Anda untuk periode ini telah terbit.\n\n" .
+                               "📌 *Detail Tagihan:*\n" .
+                               "• No. Invoice: #{$invoice->invoice_number}\n" .
+                               "• Jumlah: Rp " . number_format($invoice->amount, 0, ',', '.') . "\n" .
+                               "• Jatuh Tempo: " . $invoice->due_date->format('d M Y') . "\n\n" .
+                               "Silakan lakukan pembayaran melalui portal pelanggan kami:\n" .
+                               route('login') . "\n\n" .
+                               "Terima kasih.";
+                    
+                    $this->wa->sendMessage($customer->phone, $message);
+                }
+            }
+        }
+
+        return redirect()->back()->with('message', "Sukses meng-generate {$count} tagihan baru secara masal dan mengirimkan notifikasi.");
     }
 
     public function markAsPaid(Invoice $invoice)
@@ -119,6 +195,15 @@ class InvoiceController extends Controller
                        "Layanan internet Anda telah aktif kembali. Selamat menikmati!\n\n" .
                        "-- Idrisiyyah Net --";
             $this->wa->sendMessage($customer->phone, $message);
+        }
+
+        // SEND EMAIL CONFIRMATION
+        if ($customer && $customer->user && $customer->user->email) {
+            try {
+                $customer->user->notify(new \App\Notifications\InvoicePaidNotification($invoice));
+            } catch (\Exception $e) {
+                \Log::error('Error sending paid invoice email: ' . $e->getMessage());
+            }
         }
 
         return redirect()->back()->with('message', 'Tagihan dikonfirmasi lunas.');

@@ -37,6 +37,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('customers', \App\Http\Controllers\Admin\CustomerController::class);
 
     // Invoice Management
+    Route::post('invoices/bulk-generate', [\App\Http\Controllers\Admin\InvoiceController::class, 'bulkGenerate'])->name('invoices.bulk-generate');
     Route::post('invoices/bulk-whatsapp', [\App\Http\Controllers\Admin\InvoiceController::class, 'bulkSendWhatsapp'])->name('invoices.bulk-whatsapp');
     Route::post('invoices/bulk-email', [\App\Http\Controllers\Admin\InvoiceController::class, 'bulkSendEmail'])->name('invoices.bulk-email');
     Route::resource('invoices', \App\Http\Controllers\Admin\InvoiceController::class);
@@ -97,5 +98,9 @@ Route::middleware('auth')->group(function () {
     Route::post('/notifications/mark-all-read', [App\Http\Controllers\Admin\NotificationController::class, 'markAllAsRead'])->name('notifications.markAllRead');
     Route::post('/notifications/{id}/mark-read', [App\Http\Controllers\Admin\NotificationController::class, 'markAsRead'])->name('notifications.markRead');
 });
+
+// Google OAuth Routes
+Route::get('auth/google', [\App\Http\Controllers\Auth\GoogleController::class, 'redirectToGoogle'])->name('auth.google');
+Route::get('auth/google/callback', [\App\Http\Controllers\Auth\GoogleController::class, 'handleGoogleCallback'])->name('auth.google.callback');
 
 require __DIR__.'/auth.php';

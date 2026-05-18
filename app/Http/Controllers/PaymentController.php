@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Models\Customer;
+use App\Notifications\InvoicePaidNotification;
 use App\Services\MidtransService;
 use App\Services\MikrotikService;
 use App\Services\WhatsAppService;
@@ -101,6 +103,15 @@ class PaymentController extends Controller
                            "Layanan internet Anda telah aktif kembali. Selamat berinternet!\n\n" .
                            "-- Idrisiyyah Net --";
                 $this->wa->sendMessage($customer->phone, $message);
+            }
+
+            // SEND EMAIL NOTIFICATION
+            if ($customer && $customer->user && $customer->user->email) {
+                try {
+                    $customer->user->notify(new InvoicePaidNotification($invoice));
+                } catch (\Exception $e) {
+                    Log::error('Error sending callback paid invoice email: ' . $e->getMessage());
+                }
             }
 
             Log::info("Payment success for Invoice: " . $invoice->invoice_number);

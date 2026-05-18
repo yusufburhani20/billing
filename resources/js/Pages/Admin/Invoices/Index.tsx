@@ -64,11 +64,20 @@ interface Invoice {
     payments?: Payment[];
 }
 
-interface Props {
-    invoices: Invoice[];
+interface ActiveCustomer {
+    id: number;
+    name: string;
+    customer_code: string;
+    package_name: string;
+    price: number;
 }
 
-export default function Index({ invoices }: Props) {
+interface Props {
+    invoices: Invoice[];
+    activeCustomers?: ActiveCustomer[];
+}
+
+export default function Index({ invoices, activeCustomers = [] }: Props) {
     const { post, delete: destroy, processing } = useForm();
     const { flash } = usePage<any>().props;
     const [searchTerm, setSearchTerm] = useState('');
@@ -77,6 +86,36 @@ export default function Index({ invoices }: Props) {
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
     const [isBulkSendingWa, setIsBulkSendingWa] = useState(false);
     const [isBulkSendingEmail, setIsBulkSendingEmail] = useState(false);
+
+    // Generator States
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [isBulkGenerating, setIsBulkGenerating] = useState(false);
+
+    const createForm = useForm({
+        customer_id: '',
+        month: new Date().getMonth() + 1,
+        year: new Date().getFullYear(),
+    });
+
+    const handleCreateInvoice = (e: React.FormEvent) => {
+        e.preventDefault();
+        createForm.post(route('admin.invoices.store'), {
+            onSuccess: () => {
+                setShowCreateModal(false);
+                createForm.reset();
+            }
+        });
+    };
+
+    const handleBulkGenerate = () => {
+        if (confirm('Generate tagihan baru secara masal untuk seluruh pelanggan aktif pada bulan ini? Pelanggan yang sudah memiliki tagihan bulan ini tidak akan terduplikasi.')) {
+            setIsBulkGenerating(true);
+            router.post(route('admin.invoices.bulk-generate'), {}, {
+                onFinish: () => setIsBulkGenerating(false),
+                preserveScroll: true,
+            });
+        }
+    };
 
     const filteredInvoices = invoices.filter(inv => 
         inv.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -160,6 +199,29 @@ export default function Index({ invoices }: Props) {
                     </h2>
                     <div className="flex items-center gap-4">
                         <div className="flex items-center gap-2">
+                            <button
+                                onClick={handleBulkGenerate}
+                                disabled={isBulkGenerating}
+                                className="flex items-center gap-2 px-4 py-2 bg-cyan-50 text-cyan-600 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-cyan-100 transition-all disabled:opacity-50"
+                            >
+                                {isBulkGenerating ? (
+                                    <>
+                                        <svg className="animate-spin w-3 h-3 text-cyan-600" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                        </svg>
+                                        Generating...
+                                    </>
+                                ) : (
+                                    'Generate Masal'
+                                )}
+                            </button>
+                            <button
+                                onClick={() => setShowCreateModal(true)}
+                                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-indigo-700 transition-all"
+                            >
+                                <Plus className="w-4 h-4" /> Buat Tagihan
+                            </button>
                             <a 
                                 href={route('admin.reports.excel')} 
                                 className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-emerald-100 transition-all"
@@ -418,6 +480,109 @@ export default function Index({ invoices }: Props) {
                      </div>
                  </div>
              )}
-                    </AuthenticatedLayout>
+
+            {/* Modal Buat Tagihan Baru */}
+            {showCreateModal && (
+                <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+                    {/* Backdrop */}
+                    <div 
+                        className="fixed inset-0 bg-gray-900/60 backdrop-blur-md animate-in fade-in"
+                        onClick={() => setShowCreateModal(false)}
+                    />
+                    
+                    {/* Modal Card */}
+                    <div className="bg-white dark:bg-gray-800 w-full max-w-md rounded-[2rem] relative z-10 animate-in zoom-in-95 duration-200 overflow-hidden shadow-2xl border border-gray-100 dark:border-gray-700">
+                        <div className="p-8">
+                            <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter mb-1">
+                                Buat <span className="text-indigo-600">Tagihan Baru</span>
+                            </h3>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-6">
+                                Terbitkan tagihan manual untuk perorangan
+                            </p>
+
+                            <form onSubmit={handleCreateInvoice} className="space-y-5">
+                                {/* Pelanggan */}
+                                <div className="group">
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block ml-1 group-focus-within:text-indigo-600 transition-colors">Pelanggan Aktif</label>
+                                    <select
+                                        value={createForm.data.customer_id}
+                                        onChange={(e) => createForm.setData('customer_id', e.target.value)}
+                                        required
+                                        className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/30 border-2 border-transparent rounded-xl text-xs font-bold focus:ring-0 focus:border-indigo-500/50 focus:bg-white dark:focus:bg-gray-800 transition-all dark:text-white"
+                                    >
+                                        <option value="" disabled className="dark:bg-gray-800">-- Pilih Pelanggan --</option>
+                                        {activeCustomers.map(cust => (
+                                            <option key={cust.id} value={cust.id} className="dark:bg-gray-800">
+                                                {cust.name} ({cust.customer_code}) - {cust.package_name} [Rp {Number(cust.price).toLocaleString('id-ID')}]
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {createForm.errors.customer_id && (
+                                        <span className="text-xs text-red-500 font-bold block mt-1">{createForm.errors.customer_id}</span>
+                                    )}
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    {/* Bulan */}
+                                    <div className="group">
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block ml-1 group-focus-within:text-indigo-600 transition-colors">Bulan</label>
+                                        <select
+                                            value={createForm.data.month}
+                                            onChange={(e) => createForm.setData('month', parseInt(e.target.value))}
+                                            required
+                                            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/30 border-2 border-transparent rounded-xl text-xs font-bold focus:ring-0 focus:border-indigo-500/50 focus:bg-white dark:focus:bg-gray-800 transition-all dark:text-white"
+                                        >
+                                            {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                                                <option key={m} value={m} className="dark:bg-gray-800">
+                                                    {new Date(2000, m - 1).toLocaleString('id-ID', { month: 'long' })}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* Tahun */}
+                                    <div className="group">
+                                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block ml-1 group-focus-within:text-indigo-600 transition-colors">Tahun</label>
+                                        <select
+                                            value={createForm.data.year}
+                                            onChange={(e) => createForm.setData('year', parseInt(e.target.value))}
+                                            required
+                                            className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/30 border-2 border-transparent rounded-xl text-xs font-bold focus:ring-0 focus:border-indigo-500/50 focus:bg-white dark:focus:bg-gray-800 transition-all dark:text-white"
+                                        >
+                                            {[new Date().getFullYear() - 1, new Date().getFullYear(), new Date().getFullYear() + 1].map(y => (
+                                                <option key={y} value={y} className="dark:bg-gray-800">
+                                                    {y}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {flash?.error && (
+                                    <span className="text-xs text-red-500 font-bold block mt-1 text-center">{flash.error}</span>
+                                )}
+
+                                <div className="pt-4 flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowCreateModal(false)}
+                                        className="flex-1 py-3 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-xl text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-300 transition-all border-none"
+                                    >
+                                        Batal
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={createForm.processing}
+                                        className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all disabled:opacity-50 border-none"
+                                    >
+                                        {createForm.processing ? 'Memproses...' : 'Terbitkan'}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </AuthenticatedLayout>
     );
 }
