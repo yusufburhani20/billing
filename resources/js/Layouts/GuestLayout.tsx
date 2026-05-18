@@ -6,13 +6,13 @@ export default function Guest({ children }: PropsWithChildren) {
         <div className="h-screen w-full flex flex-col md:flex-row bg-white dark:bg-gray-900 overflow-hidden selection:bg-indigo-100 dark:selection:bg-indigo-900/30">
             
             {/* Left Side: Form Area */}
-            <div className="w-full md:w-[50%] lg:w-[45%] h-full flex flex-col p-6 md:p-8 lg:p-12 bg-white dark:bg-gray-900 z-50 relative">
-                <div className="flex-1 flex flex-col justify-start pt-8 max-w-2xl mx-auto w-full">
-                    <div className="flex flex-col items-center justify-center mb-8">
-                        <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600 mb-3">
-                            <Wifi className="w-6 h-6" />
+            <div className="w-full md:w-[50%] lg:w-[45%] h-full flex flex-col p-6 md:p-8 lg:p-10 bg-white dark:bg-gray-900 z-50 relative overflow-y-auto">
+                <div className="flex-1 flex flex-col justify-start pt-2 md:pt-4 max-w-2xl mx-auto w-full">
+                    <div className="flex flex-col items-center justify-center mb-4">
+                        <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600 mb-2">
+                            <Wifi className="w-5 h-5" />
                         </div>
-                        <h1 className="text-2xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Idrisiyyah <span className="text-indigo-600">Net</span></h1>
+                        <h1 className="text-xl font-black text-gray-900 dark:text-white uppercase tracking-tighter">Idrisiyyah <span className="text-indigo-600">Net</span></h1>
                     </div>
 
                     {children}

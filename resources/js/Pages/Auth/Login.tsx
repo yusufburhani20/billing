@@ -43,7 +43,7 @@ export default function Login({ status, canResetPassword }: { status?: string, c
                 </div>
             )}
 
-            <div className="mb-6 text-center">
+            <div className="mb-3 text-center">
                 <p className="text-sm font-bold text-gray-700 dark:text-gray-300">Masuk dengan akun anda</p>
             </div>
 
