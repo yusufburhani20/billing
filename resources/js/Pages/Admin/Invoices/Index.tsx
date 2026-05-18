@@ -11,7 +11,8 @@ import {
     Eye,
     Plus,
     Search,
-    MessageSquare
+    MessageSquare,
+    Mail
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -86,6 +87,12 @@ export default function Index({ invoices }: Props) {
     const sendWhatsapp = (id: number) => {
         if (confirm('Kirim notifikasi WhatsApp manual ke pelanggan?')) {
             post(route('admin.invoices.whatsapp', id));
+        }
+    };
+
+    const sendEmail = (id: number) => {
+        if (confirm('Kirim notifikasi email manual ke pelanggan?')) {
+            post(route('admin.invoices.email', id));
         }
     };
 
@@ -193,6 +200,13 @@ export default function Index({ invoices }: Props) {
                                                         title="Kirim Notifikasi WA"
                                                     >
                                                         <MessageSquare className="w-4 h-4" />
+                                                    </button>
+                                                    <button 
+                                                        onClick={() => sendEmail(inv.id)} 
+                                                        className="p-2.5 text-gray-400 hover:text-indigo-600 transition-all"
+                                                        title="Kirim Notifikasi Email"
+                                                    >
+                                                        <Mail className="w-4 h-4" />
                                                     </button>
                                                     <button onClick={() => confirm('Hapus invoice?') && destroy(route('admin.invoices.destroy', inv.id))} className="p-2.5 text-gray-400 hover:text-red-600 transition-all"><Trash2 className="w-4 h-4" /></button>
                                                 </div>

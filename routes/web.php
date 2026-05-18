@@ -41,6 +41,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('invoices/{invoice}/print', [\App\Http\Controllers\Admin\InvoiceController::class, 'print'])->name('invoices.print');
     Route::post('invoices/{invoice}/pay', [\App\Http\Controllers\Admin\InvoiceController::class, 'markAsPaid'])->name('invoices.pay');
     Route::post('invoices/{invoice}/whatsapp', [\App\Http\Controllers\Admin\InvoiceController::class, 'sendWhatsapp'])->name('invoices.whatsapp');
+    Route::post('invoices/{invoice}/email', [\App\Http\Controllers\Admin\InvoiceController::class, 'sendEmail'])->name('invoices.email');
 
     // User Management
     Route::resource('users', \App\Http\Controllers\Admin\UserController::class);

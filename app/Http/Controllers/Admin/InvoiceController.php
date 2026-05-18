@@ -515,4 +515,22 @@ HTML;
 
         return redirect()->back()->with('error', 'Gagal mengirim pesan WhatsApp. Pastikan gateway WA aktif.');
     }
+
+    public function sendEmail(Invoice $invoice)
+    {
+        $invoice->load(['customer.user']);
+        $customer = $invoice->customer;
+
+        if (!$customer || !$customer->user || !$customer->user->email) {
+            return redirect()->back()->with('error', 'Alamat email pelanggan tidak ditemukan.');
+        }
+
+        try {
+            $customer->user->notify(new InvoiceCreatedNotification($invoice));
+            return redirect()->back()->with('message', 'Notifikasi Email berhasil dikirim ke pelanggan.');
+        } catch (\Exception $e) {
+            \Log::error('Error sending invoice email: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal mengirim email: ' . $e->getMessage());
+        }
+    }
 }
