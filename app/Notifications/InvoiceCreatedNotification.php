@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Invoice;
+use App\Models\Setting;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
@@ -20,6 +21,9 @@ class InvoiceCreatedNotification extends Notification
 
     public function via($notifiable): array
     {
+        if (Setting::getValue('enable_email_notifications', 'yes') !== 'yes') {
+            return [];
+        }
         return ['mail'];
     }
 

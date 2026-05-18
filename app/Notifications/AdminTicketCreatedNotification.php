@@ -7,6 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use App\Models\Ticket;
+use App\Models\Setting;
 
 class AdminTicketCreatedNotification extends Notification
 {
@@ -29,6 +30,9 @@ class AdminTicketCreatedNotification extends Notification
      */
     public function via(object $notifiable): array
     {
+        if (Setting::getValue('enable_email_notifications', 'yes') !== 'yes') {
+            return [];
+        }
         return ['mail'];
     }
 

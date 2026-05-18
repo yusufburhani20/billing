@@ -28,6 +28,8 @@ export default function Index({ settings }: Props) {
         rt_rw: settings.rt_rw || '',
         phone: settings.phone || '',
         favicon: null as File | null,
+        enable_email_notifications: settings.enable_email_notifications || 'yes',
+        enable_wa_notifications: settings.enable_wa_notifications || 'yes',
     });
 
     useEffect(() => {
@@ -134,6 +136,27 @@ export default function Index({ settings }: Props) {
                                         ></textarea>
                                     </div>
                                     <div className="md:col-span-2 border-t border-gray-100 dark:border-gray-700 pt-6">
+                                        <div className="flex items-center justify-between bg-gray-50/50 dark:bg-gray-700/20 p-6 rounded-2xl border border-gray-100/50 dark:border-gray-700/30">
+                                            <div>
+                                                <h4 className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest">Notifikasi Email Pelanggan</h4>
+                                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mt-1 leading-relaxed">Aktifkan untuk mengirim kuitansi pembayaran dan tagihan baru ke email pelanggan.</p>
+                                            </div>
+                                            <div className="relative inline-flex items-center cursor-pointer">
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={data.enable_email_notifications === 'yes'}
+                                                    onChange={e => setData('enable_email_notifications', e.target.checked ? 'yes' : 'no')}
+                                                    className="sr-only peer"
+                                                    id="email-notif-switch"
+                                                />
+                                                <label 
+                                                    htmlFor="email-notif-switch"
+                                                    className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600 cursor-pointer"
+                                                ></label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="md:col-span-2 border-t border-gray-100 dark:border-gray-700 pt-6">
                                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 block ml-1">Favicon Aplikasi (.ico, .png, .jpg)</label>
                                         <div className="flex items-center gap-6">
                                             {/* Preview */}
@@ -182,6 +205,26 @@ export default function Index({ settings }: Props) {
                                     <div>
                                         <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest">WhatsApp Gateway Lokal</h3>
                                         <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Scan QR untuk menghubungkan WA Bisnis</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center justify-between bg-emerald-50/20 dark:bg-emerald-950/10 p-6 rounded-2xl border border-emerald-100/50 dark:border-emerald-900/10">
+                                    <div>
+                                        <h4 className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest">Kirim Notifikasi WhatsApp</h4>
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mt-1 leading-relaxed">Aktifkan untuk mengirim tagihan bulanan, struk pembayaran, dan isolasi otomatis via WhatsApp.</p>
+                                    </div>
+                                    <div className="relative inline-flex items-center cursor-pointer">
+                                        <input 
+                                            type="checkbox" 
+                                            checked={data.enable_wa_notifications === 'yes'}
+                                            onChange={e => setData('enable_wa_notifications', e.target.checked ? 'yes' : 'no')}
+                                            className="sr-only peer"
+                                            id="wa-notif-switch"
+                                        />
+                                        <label 
+                                            htmlFor="wa-notif-switch"
+                                            className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-emerald-600 cursor-pointer"
+                                        ></label>
                                     </div>
                                 </div>
 
