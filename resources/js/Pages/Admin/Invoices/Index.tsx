@@ -193,60 +193,9 @@ export default function Index({ invoices, activeCustomers = [] }: Props) {
     return (
         <AuthenticatedLayout
             header={
-                <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-black text-gray-800 dark:text-gray-200 uppercase tracking-tight">
-                        Billing <span className="text-indigo-600">Invoices</span>
-                    </h2>
-                    <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={handleBulkGenerate}
-                                disabled={isBulkGenerating}
-                                className="flex items-center gap-2 px-4 py-2 bg-cyan-50 text-cyan-600 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-cyan-100 transition-all disabled:opacity-50"
-                            >
-                                {isBulkGenerating ? (
-                                    <>
-                                        <svg className="animate-spin w-3 h-3 text-cyan-600" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                        </svg>
-                                        Generating...
-                                    </>
-                                ) : (
-                                    'Generate Masal'
-                                )}
-                            </button>
-                            <button
-                                onClick={() => setShowCreateModal(true)}
-                                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-xs font-black uppercase tracking-widest rounded-xl hover:bg-indigo-700 transition-all"
-                            >
-                                <Plus className="w-4 h-4" /> Buat Tagihan
-                            </button>
-                            <a 
-                                href={route('admin.reports.excel')} 
-                                className="flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-emerald-100 transition-all"
-                            >
-                                <Download className="w-4 h-4" /> Excel
-                            </a>
-                            <a 
-                                href={route('admin.reports.pdf')} 
-                                className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-600 text-xs font-black uppercase tracking-widest rounded-xl hover:bg-red-100 transition-all"
-                            >
-                                <FileText className="w-4 h-4" /> PDF
-                            </a>
-                        </div>
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                            <input 
-                                type="text" 
-                                placeholder="Search INV / Customer..." 
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-10 pr-4 py-2 bg-white border-gray-100 rounded-xl text-xs font-bold focus:ring-2 focus:ring-indigo-500 border-none "
-                            />
-                        </div>
-                    </div>
-                </div>
+                <h2 className="text-xl font-black text-gray-800 dark:text-gray-200 uppercase tracking-tight">
+                    Billing <span className="text-indigo-600">Invoices</span>
+                </h2>
             }
         >
             <Head title="Invoices" />
@@ -279,7 +228,64 @@ export default function Index({ invoices, activeCustomers = [] }: Props) {
                         </div>
                     )}
 
-                    <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 overflow-hidden">
+                    {/* Action Bar (Search & Buttons) */}
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 px-1">
+                        {/* Search Input on the Left */}
+                        <div className="relative w-full md:max-w-md">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                            <input 
+                                type="text" 
+                                placeholder="Cari nomor tagihan atau nama pelanggan..." 
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800 border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-indigo-500/30 transition-all dark:text-white shadow-sm"
+                            />
+                        </div>
+
+                        {/* Action Buttons on the Right */}
+                        <div className="flex flex-wrap items-center gap-2">
+                            <button
+                                onClick={handleBulkGenerate}
+                                disabled={isBulkGenerating}
+                                className="flex items-center gap-2 px-5 py-3 bg-cyan-50 dark:bg-cyan-950/30 text-cyan-600 dark:text-cyan-400 text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-cyan-100 dark:hover:bg-cyan-900/40 transition-all disabled:opacity-50 border border-transparent shadow-sm"
+                            >
+                                {isBulkGenerating ? (
+                                    <>
+                                        <svg className="animate-spin w-3 h-3 text-cyan-600" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                        </svg>
+                                        Generating...
+                                    </>
+                                ) : (
+                                    'Generate Masal'
+                                )}
+                            </button>
+                            
+                            <button
+                                onClick={() => setShowCreateModal(true)}
+                                className="flex items-center gap-2 px-5 py-3 bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all shadow-md shadow-indigo-100 dark:shadow-none border border-transparent"
+                            >
+                                <Plus className="w-4 h-4" /> Buat Tagihan
+                            </button>
+
+                            <a 
+                                href={route('admin.reports.excel')} 
+                                className="flex items-center gap-2 px-5 py-3 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400 text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-all border border-transparent shadow-sm"
+                            >
+                                <Download className="w-4 h-4" /> Excel
+                            </a>
+
+                            <a 
+                                href={route('admin.reports.pdf')} 
+                                className="flex items-center gap-2 px-5 py-3 bg-red-50 dark:bg-red-950/30 text-red-600 dark:text-red-400 text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-red-100 dark:hover:bg-red-900/40 transition-all border border-transparent shadow-sm"
+                            >
+                                <FileText className="w-4 h-4" /> PDF
+                            </a>
+                        </div>
+                    </div>
+
+                    <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 overflow-hidden shadow-sm">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
                                 <thead>
