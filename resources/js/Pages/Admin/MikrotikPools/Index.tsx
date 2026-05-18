@@ -70,23 +70,28 @@ export default function MikrotikPoolsIndex({ pools, routers }: Props) {
     return (
         <AuthenticatedLayout
             header={
-                <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-black text-gray-800 dark:text-gray-200 uppercase tracking-tight">
-                        IP Pool <span className="text-indigo-600">Mikrotik</span>
-                    </h2>
-                    <button
-                        onClick={openCreateModal}
-                        className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white text-sm font-bold rounded-xl hover:bg-indigo-700 transition-all "
-                    >
-                        <Plus className="w-4 h-4" /> Tambah IP Pool
-                    </button>
-                </div>
+                <h2 className="text-xl font-black text-gray-800 dark:text-gray-200 uppercase tracking-tight">
+                    IP Pool Mikrotik
+                </h2>
             }
         >
             <Head title="IP Pool Mikrotik" />
 
             <div className="py-12">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                    {/* Action Bar */}
+                    <div className="flex justify-between items-center mb-6 px-4 md:px-0">
+                        <div>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Total IP Pool: {pools.length}</p>
+                        </div>
+                        <button
+                            onClick={openCreateModal}
+                            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-black uppercase tracking-wider rounded-xl transition-all shadow-lg shadow-indigo-600/20"
+                        >
+                            <Plus className="w-4 h-4" /> Tambah IP Pool
+                        </button>
+                    </div>
+
                     <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">

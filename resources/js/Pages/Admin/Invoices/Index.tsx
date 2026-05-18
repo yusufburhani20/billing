@@ -229,9 +229,9 @@ export default function Index({ invoices, activeCustomers = [] }: Props) {
                     )}
 
                     {/* Action Bar (Search & Buttons) */}
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 px-1">
-                        {/* Search Input on the Left */}
-                        <div className="relative w-full md:max-w-md">
+                    <div className="flex flex-col gap-4 mb-6 px-1">
+                        {/* Search Input on Top */}
+                        <div className="relative w-full">
                             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                             <input 
                                 type="text" 
@@ -242,7 +242,7 @@ export default function Index({ invoices, activeCustomers = [] }: Props) {
                             />
                         </div>
 
-                        {/* Action Buttons on the Right */}
+                        {/* Action Buttons Below the Search Input */}
                         <div className="flex flex-wrap items-center gap-2">
                             <button
                                 onClick={handleBulkGenerate}
