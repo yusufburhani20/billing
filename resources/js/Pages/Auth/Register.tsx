@@ -30,14 +30,14 @@ export default function Register() {
         <GuestLayout>
             <Head title="Pendaftaran Pelanggan" />
 
-            <div className="mb-4 text-center">
+            <div className="mb-2 text-center">
                 <p className="text-sm font-bold text-gray-700 dark:text-gray-300">
                     Lengkapi data diri Anda di bawah ini
                 </p>
             </div>
 
-            <form onSubmit={submit} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+            <form onSubmit={submit} className="space-y-3">
+                <div className="grid grid-cols-2 gap-3">
                     {/* Name Field */}
                     <div className="group">
                         <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block ml-1 group-focus-within:text-indigo-600 transition-colors">Nama Lengkap</label>
@@ -141,16 +141,16 @@ export default function Register() {
                     </div>
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-0">
                     <button
                         disabled={processing}
-                        className="w-full bg-indigo-600 text-white py-3 rounded-lg text-xs font-black uppercase tracking-[0.3em] hover:bg-indigo-700 dark:transition-all flex items-center justify-center gap-2 disabled:opacity-50 mb-3"
+                        className="w-full bg-indigo-600 text-white py-2.5 rounded-lg text-xs font-black uppercase tracking-[0.3em] hover:bg-indigo-700 dark:transition-all flex items-center justify-center gap-2 disabled:opacity-50 mb-2"
                     >
                         {processing ? 'Memproses...' : 'Buat Akun Sekarang'} <ArrowRight className="w-4 h-4" />
                     </button>
                 </div>
 
-                <div className="relative flex py-2 items-center">
+                <div className="relative flex py-1 items-center">
                     <div className="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
                     <span className="flex-shrink mx-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">atau</span>
                     <div className="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
@@ -158,7 +158,7 @@ export default function Register() {
 
                 <a
                     href={route('auth.google')}
-                    className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 py-3 rounded-lg text-xs font-black uppercase tracking-[0.15em] flex items-center justify-center gap-3 transition-all dark:text-white text-center shadow-sm"
+                    className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 py-2.5 rounded-lg text-xs font-black uppercase tracking-[0.15em] flex items-center justify-center gap-3 transition-all dark:text-white text-center shadow-sm"
                 >
                     <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -169,7 +169,7 @@ export default function Register() {
                     Daftar dengan Google
                 </a>
 
-                <p className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-3">
+                <p className="text-center text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-2">
                     Sudah jadi bagian dari kami?{' '}
                     <Link
                         href={route('login')}
