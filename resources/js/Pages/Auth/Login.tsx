@@ -43,7 +43,7 @@ export default function Login({ status, canResetPassword }: { status?: string, c
                 </div>
             )}
 
-            <div className="mb-3 text-center">
+            <div className="mb-2 text-center">
                 <p className="text-sm font-bold text-gray-700 dark:text-gray-300">Masuk dengan akun anda</p>
             </div>
 
@@ -97,15 +97,15 @@ export default function Login({ status, canResetPassword }: { status?: string, c
                     </label>
                 </div>
 
-                <div className="pt-2">
+                <div className="pt-0">
                     <button
                         disabled={processing}
-                        className="w-full bg-indigo-600 text-white py-4 rounded-xl text-xs font-black uppercase tracking-[0.3em] hover:bg-indigo-700 dark:transition-all flex items-center justify-center gap-3 disabled:opacity-50 mb-4"
+                        className="w-full bg-indigo-600 text-white py-3 rounded-xl text-xs font-black uppercase tracking-[0.3em] hover:bg-indigo-700 dark:transition-all flex items-center justify-center gap-3 disabled:opacity-50 mb-2"
                     >
                         {processing ? 'Memproses...' : 'Login Ke Portal'} <ArrowRight className="w-4 h-4" />
                     </button>
 
-                    <div className="relative flex py-2 items-center">
+                    <div className="relative flex py-1 items-center">
                         <div className="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
                         <span className="flex-shrink mx-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">atau</span>
                         <div className="flex-grow border-t border-gray-200 dark:border-gray-700"></div>
@@ -113,7 +113,7 @@ export default function Login({ status, canResetPassword }: { status?: string, c
 
                     <a
                         href={route('auth.google')}
-                        className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 py-3.5 rounded-xl text-xs font-black uppercase tracking-[0.15em] flex items-center justify-center gap-3 transition-all dark:text-white mb-5 text-center shadow-sm"
+                        className="w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 py-2.5 rounded-xl text-xs font-black uppercase tracking-[0.15em] flex items-center justify-center gap-3 transition-all dark:text-white mb-3.5 text-center shadow-sm"
                     >
                         <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -124,7 +124,7 @@ export default function Login({ status, canResetPassword }: { status?: string, c
                         Masuk dengan Google
                     </a>
                     
-                    <div className="flex flex-col gap-2 text-center">
+                    <div className="flex flex-col gap-0.5 text-center">
                         {canResetPassword && (
                             <div>
                                 <span className="text-[11px] font-bold text-gray-400">Lupa Password? </span>
