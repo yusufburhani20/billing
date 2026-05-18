@@ -10,7 +10,8 @@ import {
     Download,
     Eye,
     Plus,
-    Search
+    Search,
+    MessageSquare
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -79,6 +80,12 @@ export default function Index({ invoices }: Props) {
     const markAsPaid = (id: number) => {
         if (confirm('Konfirmasi pembayaran manual?')) {
             post(route('admin.invoices.pay', id));
+        }
+    };
+
+    const sendWhatsapp = (id: number) => {
+        if (confirm('Kirim notifikasi WhatsApp manual ke pelanggan?')) {
+            post(route('admin.invoices.whatsapp', id));
         }
     };
 
@@ -180,6 +187,13 @@ export default function Index({ invoices }: Props) {
                                                         </button>
                                                     )}
                                                     <a href={route('admin.invoices.print', inv.id)} target="_blank" className="p-2.5 text-gray-400 hover:text-indigo-600 transition-all"><Eye className="w-4 h-4" /></a>
+                                                    <button 
+                                                        onClick={() => sendWhatsapp(inv.id)} 
+                                                        className="p-2.5 text-gray-400 hover:text-emerald-600 transition-all"
+                                                        title="Kirim Notifikasi WA"
+                                                    >
+                                                        <MessageSquare className="w-4 h-4" />
+                                                    </button>
                                                     <button onClick={() => confirm('Hapus invoice?') && destroy(route('admin.invoices.destroy', inv.id))} className="p-2.5 text-gray-400 hover:text-red-600 transition-all"><Trash2 className="w-4 h-4" /></button>
                                                 </div>
                                             </td>

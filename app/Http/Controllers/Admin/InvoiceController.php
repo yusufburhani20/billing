@@ -480,4 +480,39 @@ HTML;
 
         return response($html);
     }
+
+    public function sendWhatsapp(Invoice $invoice)
+    {
+        $invoice->load(['customer.user', 'customer.package']);
+        $customer = $invoice->customer;
+
+        if (!$customer || !$customer->phone) {
+            return redirect()->back()->with('error', 'Nomor WhatsApp pelanggan tidak ditemukan.');
+        }
+
+        if ($invoice->status === 'paid') {
+            $message = "Halo *{$customer->user->name}*,\n\n" .
+                       "Pembayaran tagihan internet **Idrisiyyah Net** #{$invoice->invoice_number} sebesar *Rp " . number_format($invoice->amount, 0, ',', '.') . "* telah kami terima.\n\n" .
+                       "Layanan internet Anda aktif secara normal. Terima kasih atas kepercayaan Anda!\n\n" .
+                       "-- Idrisiyyah Net --";
+        } else {
+            $message = "Halo *{$customer->user->name}*,\n\n" .
+                       "Ini adalah pengingat tagihan internet **Idrisiyyah Net** Anda yang belum terbayar.\n\n" .
+                       "📌 *Detail Tagihan:*\n" .
+                       "• No. Invoice: #{$invoice->invoice_number}\n" .
+                       "• Jumlah: Rp " . number_format($invoice->amount, 0, ',', '.') . "\n" .
+                       "• Jatuh Tempo: " . $invoice->due_date->format('d M Y') . "\n\n" .
+                       "Silakan lakukan pembayaran melalui portal pelanggan kami:\n" .
+                       route('login') . "\n\n" .
+                       "Terima kasih.";
+        }
+
+        $sent = $this->wa->sendMessage($customer->phone, $message);
+
+        if ($sent) {
+            return redirect()->back()->with('message', 'Notifikasi WhatsApp berhasil dikirim ke pelanggan.');
+        }
+
+        return redirect()->back()->with('error', 'Gagal mengirim pesan WhatsApp. Pastikan gateway WA aktif.');
+    }
 }
