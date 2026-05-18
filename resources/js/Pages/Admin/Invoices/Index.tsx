@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, Link } from '@inertiajs/react';
+import { Head, useForm, Link, router, usePage } from '@inertiajs/react';
 import { 
     FileText, 
     Trash2, 
@@ -70,8 +70,10 @@ interface Props {
 
 export default function Index({ invoices }: Props) {
     const { post, delete: destroy, processing } = useForm();
+    const { flash } = usePage<any>().props;
     const [searchTerm, setSearchTerm] = useState('');
-    
+    const [sendingWaId, setSendingWaId] = useState<number | null>(null);
+    const [sendingEmailId, setSendingEmailId] = useState<number | null>(null);
 
     const filteredInvoices = invoices.filter(inv => 
         inv.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -86,13 +88,21 @@ export default function Index({ invoices }: Props) {
 
     const sendWhatsapp = (id: number) => {
         if (confirm('Kirim notifikasi WhatsApp manual ke pelanggan?')) {
-            post(route('admin.invoices.whatsapp', id));
+            setSendingWaId(id);
+            router.post(route('admin.invoices.whatsapp', id), {}, {
+                onFinish: () => setSendingWaId(null),
+                preserveScroll: true,
+            });
         }
     };
 
     const sendEmail = (id: number) => {
         if (confirm('Kirim notifikasi email manual ke pelanggan?')) {
-            post(route('admin.invoices.email', id));
+            setSendingEmailId(id);
+            router.post(route('admin.invoices.email', id), {}, {
+                onFinish: () => setSendingEmailId(null),
+                preserveScroll: true,
+            });
         }
     };
 
@@ -136,6 +146,32 @@ export default function Index({ invoices }: Props) {
 
             <div className="py-12">
                 <div className="mx-auto max-w-7xl sm:px-6 lg:px-8">
+                    {/* Success Flash Message */}
+                    {flash?.message && (
+                        <div className="bg-emerald-50 dark:bg-emerald-900/30 border border-emerald-100 dark:border-emerald-800 p-6 rounded-[2rem] flex gap-4 items-center animate-in fade-in slide-in-from-top-4 duration-500 mb-8">
+                            <div className="w-10 h-10 bg-emerald-100 dark:bg-emerald-900/50 rounded-2xl flex items-center justify-center text-emerald-600 shrink-0">
+                                <CheckCircle className="w-6 h-6" />
+                            </div>
+                            <div>
+                                <h4 className="text-[10px] font-black text-emerald-900 dark:text-emerald-400 uppercase tracking-widest mb-0.5">Berhasil</h4>
+                                <p className="text-xs font-bold text-emerald-700 dark:text-emerald-300">{flash?.message}</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Error/Warning Flash Message */}
+                    {flash?.error && (
+                        <div className="bg-red-50 dark:bg-red-900/30 border border-red-100 dark:border-red-800 p-6 rounded-[2rem] flex gap-4 items-center animate-in fade-in slide-in-from-top-4 duration-500 mb-8">
+                            <div className="w-10 h-10 bg-red-100 dark:bg-red-900/50 rounded-2xl flex items-center justify-center text-red-600 shrink-0">
+                                <Trash2 className="w-6 h-6" stroke="currentColor" />
+                            </div>
+                            <div>
+                                <h4 className="text-[10px] font-black text-red-900 dark:text-red-400 uppercase tracking-widest mb-0.5">Gagal / Peringatan</h4>
+                                <p className="text-xs font-bold text-red-700 dark:text-red-300">{flash?.error}</p>
+                            </div>
+                        </div>
+                    )}
+
                     <div className="bg-white dark:bg-gray-800 rounded-[2.5rem] border border-gray-100 dark:border-gray-700 overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full text-left border-collapse">
@@ -186,29 +222,52 @@ export default function Index({ invoices }: Props) {
                                             <td className="px-6 py-5 text-right">
                                                 <div className="flex items-center justify-end gap-2">
                                                     {inv.status === 'unpaid' && (
-                                                        <button 
-                                                            onClick={() => markAsPaid(inv.id)}
-                                                            className="flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-indigo-700 transition-all"
-                                                        >
-                                                            <CreditCard className="w-3 h-3" /> Pay
-                                                        </button>
-                                                    )}
+                                                         <button 
+                                                             onClick={() => markAsPaid(inv.id)}
+                                                             className="flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-indigo-700 transition-all disabled:opacity-50"
+                                                             disabled={sendingWaId !== null || sendingEmailId !== null}
+                                                         >
+                                                             <CreditCard className="w-3 h-3" /> Pay
+                                                         </button>
+                                                     )}
                                                     <a href={route('admin.invoices.print', inv.id)} target="_blank" className="p-2.5 text-gray-400 hover:text-indigo-600 transition-all"><Eye className="w-4 h-4" /></a>
                                                     <button 
                                                         onClick={() => sendWhatsapp(inv.id)} 
-                                                        className="p-2.5 text-gray-400 hover:text-emerald-600 transition-all"
+                                                        className="p-2.5 text-gray-400 hover:text-emerald-600 transition-all disabled:opacity-50"
                                                         title="Kirim Notifikasi WA"
+                                                        disabled={sendingWaId !== null || sendingEmailId !== null}
                                                     >
-                                                        <MessageSquare className="w-4 h-4" />
+                                                        {sendingWaId === inv.id ? (
+                                                            <svg className="animate-spin w-4 h-4 text-emerald-600" fill="none" viewBox="0 0 24 24">
+                                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                                            </svg>
+                                                        ) : (
+                                                            <MessageSquare className="w-4 h-4" />
+                                                        )}
                                                     </button>
                                                     <button 
                                                         onClick={() => sendEmail(inv.id)} 
-                                                        className="p-2.5 text-gray-400 hover:text-indigo-600 transition-all"
+                                                        className="p-2.5 text-gray-400 hover:text-indigo-600 transition-all disabled:opacity-50"
                                                         title="Kirim Notifikasi Email"
+                                                        disabled={sendingWaId !== null || sendingEmailId !== null}
                                                     >
-                                                        <Mail className="w-4 h-4" />
+                                                        {sendingEmailId === inv.id ? (
+                                                            <svg className="animate-spin w-4 h-4 text-indigo-600" fill="none" viewBox="0 0 24 24">
+                                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                                            </svg>
+                                                        ) : (
+                                                            <Mail className="w-4 h-4" />
+                                                        )}
                                                     </button>
-                                                    <button onClick={() => confirm('Hapus invoice?') && destroy(route('admin.invoices.destroy', inv.id))} className="p-2.5 text-gray-400 hover:text-red-600 transition-all"><Trash2 className="w-4 h-4" /></button>
+                                                    <button 
+                                                        onClick={() => confirm('Hapus invoice?') && destroy(route('admin.invoices.destroy', inv.id))} 
+                                                        className="p-2.5 text-gray-400 hover:text-red-600 transition-all disabled:opacity-50"
+                                                        disabled={sendingWaId !== null || sendingEmailId !== null}
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
