@@ -37,6 +37,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('customers', \App\Http\Controllers\Admin\CustomerController::class);
 
     // Invoice Management
+    Route::post('invoices/bulk-whatsapp', [\App\Http\Controllers\Admin\InvoiceController::class, 'bulkSendWhatsapp'])->name('invoices.bulk-whatsapp');
+    Route::post('invoices/bulk-email', [\App\Http\Controllers\Admin\InvoiceController::class, 'bulkSendEmail'])->name('invoices.bulk-email');
     Route::resource('invoices', \App\Http\Controllers\Admin\InvoiceController::class);
     Route::get('invoices/{invoice}/print', [\App\Http\Controllers\Admin\InvoiceController::class, 'print'])->name('invoices.print');
     Route::post('invoices/{invoice}/pay', [\App\Http\Controllers\Admin\InvoiceController::class, 'markAsPaid'])->name('invoices.pay');

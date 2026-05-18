@@ -74,11 +74,28 @@ export default function Index({ invoices }: Props) {
     const [searchTerm, setSearchTerm] = useState('');
     const [sendingWaId, setSendingWaId] = useState<number | null>(null);
     const [sendingEmailId, setSendingEmailId] = useState<number | null>(null);
+    const [selectedIds, setSelectedIds] = useState<number[]>([]);
+    const [isBulkSendingWa, setIsBulkSendingWa] = useState(false);
+    const [isBulkSendingEmail, setIsBulkSendingEmail] = useState(false);
 
     const filteredInvoices = invoices.filter(inv => 
         inv.invoice_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
         inv.customer.user.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
+
+    const toggleSelect = (id: number) => {
+        setSelectedIds(prev => 
+            prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
+        );
+    };
+
+    const toggleSelectAll = () => {
+        if (selectedIds.length === filteredInvoices.length) {
+            setSelectedIds([]);
+        } else {
+            setSelectedIds(filteredInvoices.map(inv => inv.id));
+        }
+    };
 
     const markAsPaid = (id: number) => {
         if (confirm('Konfirmasi pembayaran manual?')) {
@@ -101,6 +118,34 @@ export default function Index({ invoices }: Props) {
             setSendingEmailId(id);
             router.post(route('admin.invoices.email', id), {}, {
                 onFinish: () => setSendingEmailId(null),
+                preserveScroll: true,
+            });
+        }
+    };
+
+    const bulkSendWhatsapp = () => {
+        if (selectedIds.length === 0) return;
+        if (confirm(`Kirim notifikasi WhatsApp masal ke ${selectedIds.length} pelanggan terpilih?`)) {
+            setIsBulkSendingWa(true);
+            router.post(route('admin.invoices.bulk-whatsapp'), { ids: selectedIds }, {
+                onFinish: () => {
+                    setIsBulkSendingWa(false);
+                    setSelectedIds([]);
+                },
+                preserveScroll: true,
+            });
+        }
+    };
+
+    const bulkSendEmail = () => {
+        if (selectedIds.length === 0) return;
+        if (confirm(`Kirim notifikasi email masal ke ${selectedIds.length} pelanggan terpilih?`)) {
+            setIsBulkSendingEmail(true);
+            router.post(route('admin.invoices.bulk-email'), { ids: selectedIds }, {
+                onFinish: () => {
+                    setIsBulkSendingEmail(false);
+                    setSelectedIds([]);
+                },
                 preserveScroll: true,
             });
         }
@@ -177,6 +222,14 @@ export default function Index({ invoices }: Props) {
                             <table className="w-full text-left border-collapse">
                                 <thead>
                                     <tr className="bg-gray-50/50 dark:bg-gray-700/50">
+                                        <th className="px-6 py-5 w-12 text-center">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={filteredInvoices.length > 0 && selectedIds.length === filteredInvoices.length}
+                                                onChange={toggleSelectAll}
+                                                className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                            />
+                                        </th>
                                         <th className="px-6 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Invoice</th>
                                         <th className="px-6 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Customer</th>
                                         <th className="px-6 py-5 text-xs font-black text-gray-400 uppercase tracking-widest">Amount</th>
@@ -186,7 +239,15 @@ export default function Index({ invoices }: Props) {
                                 </thead>
                                 <tbody className="divide-y divide-gray-50 dark:divide-gray-700">
                                     {filteredInvoices.map((inv) => (
-                                        <tr key={inv.id} className="hover:bg-gray-50/30 transition-colors group">
+                                        <tr key={inv.id} className={`hover:bg-gray-50/30 transition-colors group ${selectedIds.includes(inv.id) ? 'bg-indigo-50/20 dark:bg-indigo-900/10' : ''}`}>
+                                            <td className="px-6 py-5 w-12 text-center">
+                                                <input 
+                                                    type="checkbox" 
+                                                    checked={selectedIds.includes(inv.id)}
+                                                    onChange={() => toggleSelect(inv.id)}
+                                                    className="rounded border-gray-300 dark:border-gray-600 text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                                                />
+                                            </td>
                                             <td className="px-6 py-5">
                                                 <div className="flex items-center gap-3">
                                                     <div className="p-2.5 bg-gray-50 text-gray-400 rounded-xl group-hover:bg-indigo-50 group-hover:text-indigo-600 transition-colors">
@@ -275,7 +336,7 @@ export default function Index({ invoices }: Props) {
                                     
                                     {filteredInvoices.length === 0 && (
                                         <tr>
-                                            <td colSpan={5} className="py-20 text-center">
+                                            <td colSpan={6} className="py-20 text-center">
                                                 <FileText className="w-12 h-12 text-gray-200 mx-auto mb-4" />
                                                 <p className="text-gray-400 font-bold uppercase tracking-widest text-sm">No Invoices Found</p>
                                             </td>
@@ -287,6 +348,76 @@ export default function Index({ invoices }: Props) {
                     </div>
                 </div>
             </div>
+             {/* Glassmorphic Sticky Bulk Action Panel */}
+             {selectedIds.length > 0 && (
+                 <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-4xl px-4 animate-in fade-in slide-in-from-bottom-6 duration-300">
+                     <div className="bg-white/95 dark:bg-gray-800/95 backdrop-blur border border-gray-100 dark:border-gray-700 shadow-2xl p-4 rounded-3xl flex flex-col md:flex-row items-center justify-between gap-4">
+                         <div className="flex items-center gap-3">
+                             <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/50 rounded-2xl flex items-center justify-center text-indigo-600 shrink-0">
+                                 <CheckCircle className="w-5 h-5" stroke="currentColor" />
+                             </div>
+                             <div>
+                                 <h4 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-tight">
+                                     Aksi Masal Tagihan
+                                 </h4>
+                                 <p className="text-[10px] font-bold text-gray-400">
+                                     <span className="text-indigo-600 font-extrabold">{selectedIds.length}</span> tagihan terpilih untuk dikirimi notifikasi.
+                                 </p>
+                             </div>
+                         </div>
+                         
+                         <div className="flex items-center gap-2 w-full md:w-auto">
+                             <button
+                                 onClick={bulkSendWhatsapp}
+                                 disabled={isBulkSendingWa || isBulkSendingEmail}
+                                 className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-3 bg-emerald-600 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-emerald-700 transition-all disabled:opacity-50"
+                             >
+                                 {isBulkSendingWa ? (
+                                     <>
+                                         <svg className="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                         </svg>
+                                         Mengirim...
+                                     </>
+                                 ) : (
+                                     <>
+                                         <MessageSquare className="w-4 h-4" /> WA Masal
+                                     </>
+                                 )}
+                             </button>
+
+                             <button
+                                 onClick={bulkSendEmail}
+                                 disabled={isBulkSendingWa || isBulkSendingEmail}
+                                 className="flex-1 md:flex-none flex items-center justify-center gap-2 px-5 py-3 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-indigo-700 transition-all disabled:opacity-50"
+                             >
+                                 {isBulkSendingEmail ? (
+                                     <>
+                                         <svg className="animate-spin w-4 h-4 text-white" fill="none" viewBox="0 0 24 24">
+                                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                         </svg>
+                                         Mengirim...
+                                     </>
+                                 ) : (
+                                     <>
+                                         <Mail className="w-4 h-4" /> Email Masal
+                                     </>
+                                 )}
+                             </button>
+
+                             <button
+                                 onClick={() => setSelectedIds([])}
+                                 disabled={isBulkSendingWa || isBulkSendingEmail}
+                                 className="px-4 py-3 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-400 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all"
+                             >
+                                 Batal
+                             </button>
+                         </div>
+                     </div>
+                 </div>
+             )}
                     </AuthenticatedLayout>
     );
 }

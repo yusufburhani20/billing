@@ -533,4 +533,95 @@ HTML;
             return redirect()->back()->with('error', 'Gagal mengirim email: ' . $e->getMessage());
         }
     }
+
+    public function bulkSendWhatsapp(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:invoices,id',
+        ]);
+
+        $ids = $request->input('ids');
+        $invoices = Invoice::with(['customer.user', 'customer.package'])->whereIn('id', $ids)->get();
+
+        $successCount = 0;
+        $failCount = 0;
+
+        foreach ($invoices as $invoice) {
+            $customer = $invoice->customer;
+            if (!$customer || !$customer->phone) {
+                $failCount++;
+                continue;
+            }
+
+            if ($invoice->status === 'paid') {
+                $message = "Halo *{$customer->user->name}*,\n\n" .
+                           "Pembayaran tagihan internet **Idrisiyyah Net** #{$invoice->invoice_number} sebesar *Rp " . number_format($invoice->amount, 0, ',', '.') . "* telah kami terima.\n\n" .
+                           "Layanan internet Anda aktif secara normal. Terima kasih atas kepercayaan Anda!\n\n" .
+                           "-- Idrisiyyah Net --";
+            } else {
+                $message = "Halo *{$customer->user->name}*,\n\n" .
+                           "Ini adalah pengingat tagihan internet **Idrisiyyah Net** Anda yang belum terbayar.\n\n" .
+                           "📌 *Detail Tagihan:*\n" .
+                           "• No. Invoice: #{$invoice->invoice_number}\n" .
+                           "• Jumlah: Rp " . number_format($invoice->amount, 0, ',', '.') . "\n" .
+                           "• Jatuh Tempo: " . $invoice->due_date->format('d M Y') . "\n\n" .
+                           "Silakan lakukan pembayaran melalui portal pelanggan kami:\n" .
+                           route('login') . "\n\n" .
+                           "Terima kasih.";
+            }
+
+            $sent = $this->wa->sendMessage($customer->phone, $message);
+            if ($sent) {
+                $successCount++;
+            } else {
+                $failCount++;
+            }
+        }
+
+        if ($failCount > 0) {
+            return redirect()->back()->with('error', "Pengiriman masal selesai dengan peringatan: {$successCount} pesan berhasil dikirim, {$failCount} pesan gagal dikirim.");
+        }
+
+        return redirect()->back()->with('message', "Sukses mengirimkan {$successCount} notifikasi WhatsApp secara masal.");
+    }
+
+    public function bulkSendEmail(Request $request)
+    {
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:invoices,id',
+        ]);
+
+        $ids = $request->input('ids');
+        $invoices = Invoice::with(['customer.user'])->whereIn('id', $ids)->get();
+
+        $successCount = 0;
+        $failCount = 0;
+
+        foreach ($invoices as $invoice) {
+            $customer = $invoice->customer;
+            if (!$customer || !$customer->user || !$customer->user->email) {
+                $failCount++;
+                continue;
+            }
+
+            try {
+                $customer->user->notify(new InvoiceCreatedNotification($invoice));
+                $successCount++;
+                
+                // Throttling sleep (0.5 seconds) to protect SMTP server
+                usleep(500000);
+            } catch (\Exception $e) {
+                \Log::error('Error in bulk invoice email: ' . $e->getMessage());
+                $failCount++;
+            }
+        }
+
+        if ($failCount > 0) {
+            return redirect()->back()->with('error', "Pengiriman masal selesai dengan peringatan: {$successCount} email berhasil dikirim, {$failCount} email gagal dikirim.");
+        }
+
+        return redirect()->back()->with('message', "Sukses mengirimkan {$successCount} notifikasi Email secara masal.");
+    }
 }
