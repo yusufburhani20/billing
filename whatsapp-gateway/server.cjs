@@ -23,7 +23,7 @@ const io = new Server(server, {
 app.use(cors());
 app.use(express.json());
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
 let sock;
 let qrCode = null;
 let connectionStatus = "connecting";

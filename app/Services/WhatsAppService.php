@@ -7,11 +7,11 @@ use App\Models\Setting;
 
 class WhatsAppService
 {
-    protected $baseUrl = 'http://localhost:3001/send-message';
+    protected $baseUrl;
 
     public function __construct()
     {
-        // Tidak perlu API Key untuk gateway lokal sementara
+        $this->baseUrl = rtrim(env('WA_GATEWAY_URL', 'http://localhost:3002'), '/') . '/send-message';
     }
 
     /**

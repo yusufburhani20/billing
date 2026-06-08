@@ -99,7 +99,7 @@ class SettingController extends Controller
     public function getWhatsappStatus()
     {
         try {
-            $response = \Illuminate\Support\Facades\Http::timeout(3)->get('http://localhost:3001/status');
+            $response = \Illuminate\Support\Facades\Http::timeout(3)->get(rtrim(env('WA_GATEWAY_URL', 'http://localhost:3002'), '/') . '/status');
             if ($response->successful()) {
                 return response()->json($response->json());
             }
