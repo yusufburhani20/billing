@@ -64,6 +64,8 @@ class RouterController extends Controller
 
     public function testConnection(Router $router)
     {
+        session_write_close();
+
         if ($this->mikrotik->connect($router)) {
             $router->update(['is_active' => true]);
             return response()->json(['status' => 'success', 'message' => 'Connection successful!']);

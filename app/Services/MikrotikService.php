@@ -22,7 +22,8 @@ class MikrotikService
                 'host' => $router->ip_address,
                 'user' => $router->username,
                 'pass' => $router->password ?? '',
-                'port' => (int) $router->api_port
+                'port' => (int) $router->api_port,
+                'timeout' => 3,
             ]);
             return true;
         } catch (Exception $e) {
