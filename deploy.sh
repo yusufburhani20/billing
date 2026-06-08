@@ -23,7 +23,6 @@ echo "$LOG_PREFIX 📥 Menarik kode terbaru dari GitHub..."
 
 # Buang perubahan lokal agar git pull tidak konflik
 git checkout -- . 2>/dev/null || true
-git clean -fd 2>/dev/null || true
 
 # Pull biasa (repo publik atau SSH yang sudah terkonfigurasi)
 git pull origin main 2>&1
