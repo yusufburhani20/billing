@@ -30,7 +30,7 @@ class SettingController extends Controller
         if (!function_exists('exec')) {
             $errorMsg = "Fungsi PHP 'exec' dinonaktifkan di server Anda. Silakan hapus 'exec' dari list 'disable_functions' di pengaturan PHP aaPanel Anda.";
             @file_put_contents($deployLogPath, "[ERROR] " . $errorMsg);
-            return redirect()->back()->with('error', $errorMsg);
+            return response()->json(['success' => false, 'message' => $errorMsg], 422);
         }
 
         $scriptPath = base_path('deploy.sh');
@@ -38,7 +38,7 @@ class SettingController extends Controller
         if (!file_exists($scriptPath)) {
             $errorMsg = "Script deploy.sh tidak ditemukan di " . $scriptPath;
             @file_put_contents($deployLogPath, "[ERROR] " . $errorMsg);
-            return redirect()->back()->with('error', $errorMsg);
+            return response()->json(['success' => false, 'message' => $errorMsg], 422);
         }
 
         // Run the script and capture output
@@ -50,10 +50,17 @@ class SettingController extends Controller
         @file_put_contents($deployLogPath, $outputStr);
 
         if ($resultCode === 0) {
-            return redirect()->back()->with('message', 'Update sistem berhasil dijalankan!');
+            return response()->json(['success' => true, 'message' => 'Update sistem berhasil dijalankan!']);
         } else {
-            return redirect()->back()->with('error', 'Update sistem gagal dijalankan. Silakan cek log.');
+            return response()->json(['success' => false, 'message' => 'Update sistem gagal. Silakan cek log.'], 422);
         }
+    }
+
+    public function getDeployLog()
+    {
+        $deployLogPath = storage_path('logs/deploy.log');
+        $log = file_exists($deployLogPath) ? file_get_contents($deployLogPath) : '';
+        return response()->json(['log' => $log]);
     }
 
     public function update(Request $request)

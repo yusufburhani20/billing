@@ -22,9 +22,13 @@ interface Props {
 }
 
 export default function Index({ settings, deployLog = '' }: Props) {
-    const [activeTab, setActiveTab] = useState('general');
+    const [activeTab, setActiveTab] = useState(() => {
+        return localStorage.getItem('settings-active-tab') || 'general';
+    });
     const [waStatus, setWaStatus] = useState<'connected' | 'disconnected' | 'qr' | 'connecting'>('connecting');
     const [qrCode, setQrCode] = useState<string | null>(null);
+    const [currentDeployLog, setCurrentDeployLog] = useState(deployLog);
+    const [isUpdating, setIsUpdating] = useState(false);
 
     const { data, setData, post, processing, errors } = useForm({
         app_name: settings.app_name || 'Idrisiyyah Net',
@@ -36,14 +40,30 @@ export default function Index({ settings, deployLog = '' }: Props) {
         enable_wa_notifications: settings.enable_wa_notifications || 'yes',
     });
 
-    const { post: postUpdate, processing: processingUpdate } = useForm();
+    const handleSetActiveTab = (tab: string) => {
+        setActiveTab(tab);
+        localStorage.setItem('settings-active-tab', tab);
+    };
 
-    const handleRunUpdate = () => {
+    const handleRunUpdate = async () => {
         if (!confirm('Apakah Anda yakin ingin menjalankan update sistem sekarang? Proses ini akan memakan waktu 1-2 menit.')) return;
-        postUpdate(route('admin.settings.update-system'), {
-            preserveScroll: true,
-            onSuccess: () => alert('Proses update sistem selesai!'),
-        });
+        setIsUpdating(true);
+        localStorage.setItem('settings-active-tab', 'update');
+        try {
+            const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content;
+            const response = await axios.post(route('admin.settings.update-system'), {}, {
+                headers: { 'X-CSRF-TOKEN': csrfToken },
+            });
+            const logResponse = await axios.get(route('admin.settings.deploy-log'));
+            setCurrentDeployLog(logResponse.data.log || '');
+            alert('✅ Update sistem selesai! Lihat log di bawah.');
+        } catch (error: any) {
+            const logResponse = await axios.get(route('admin.settings.deploy-log')).catch(() => ({ data: { log: '' } }));
+            setCurrentDeployLog(logResponse.data.log || 'Terjadi error. Silakan cek log manual.');
+            alert('❌ Update gagal. Silakan cek log di bawah.');
+        } finally {
+            setIsUpdating(false);
+        }
     };
 
     useEffect(() => {
@@ -89,19 +109,19 @@ export default function Index({ settings, deployLog = '' }: Props) {
                 {/* Sidebar Tab */}
                 <div className="w-full lg:w-72 space-y-2">
                     <button 
-                        onClick={() => setActiveTab('general')}
+                        onClick={() => handleSetActiveTab('general')}
                         className={`w-full flex items-center gap-3 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'general' ? 'bg-indigo-600 text-white dark:' : 'bg-white dark:bg-gray-800 text-gray-400 hover:bg-gray-50'}`}
                     >
                         <Home className="w-4 h-4" /> Informasi Umum
                     </button>
                     <button 
-                        onClick={() => setActiveTab('whatsapp')}
+                        onClick={() => handleSetActiveTab('whatsapp')}
                         className={`w-full flex items-center gap-3 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'whatsapp' ? 'bg-indigo-600 text-white dark:' : 'bg-white dark:bg-gray-800 text-gray-400 hover:bg-gray-50'}`}
                     >
                         <MessageSquare className="w-4 h-4" /> WA Gateway
                     </button>
                     <button 
-                        onClick={() => setActiveTab('update')}
+                        onClick={() => handleSetActiveTab('update')}
                         className={`w-full flex items-center gap-3 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'update' ? 'bg-indigo-600 text-white dark:' : 'bg-white dark:bg-gray-800 text-gray-400 hover:bg-gray-50'}`}
                     >
                         <RefreshCw className="w-4 h-4" /> Update Sistem
@@ -148,10 +168,10 @@ export default function Index({ settings, deployLog = '' }: Props) {
                                 <button
                                     type="button"
                                     onClick={handleRunUpdate}
-                                    disabled={processingUpdate}
+                                    disabled={isUpdating}
                                     className="flex items-center gap-3 bg-indigo-600 text-white px-10 py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-indigo-700 transition-all disabled:opacity-50"
                                 >
-                                    {processingUpdate ? (
+                                    {isUpdating ? (
                                         <>
                                             <RefreshCw className="w-5 h-5 animate-spin" />
                                             Sedang Memproses Update...
@@ -170,7 +190,7 @@ export default function Index({ settings, deployLog = '' }: Props) {
                                     <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
                                         <Terminal className="w-4 h-4 text-gray-400" /> Log Output Deployment Terakhir
                                     </h4>
-                                    {deployLog && (
+                                    {currentDeployLog && (
                                         <span className="text-[9px] font-bold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2.5 py-1 rounded-md uppercase tracking-wider">
                                             Log Tersedia
                                         </span>
@@ -178,7 +198,7 @@ export default function Index({ settings, deployLog = '' }: Props) {
                                 </div>
 
                                 <pre className="p-6 bg-gray-900 text-gray-100 rounded-2xl font-mono text-xs overflow-x-auto whitespace-pre-wrap max-h-[24rem] custom-scrollbar border border-gray-800 shadow-inner">
-                                    {deployLog || "Belum ada log update terbaru. Klik tombol 'Jalankan Auto Deployment' untuk memulai."}
+                                    {currentDeployLog || "Belum ada log update terbaru. Klik tombol 'Jalankan Auto Deployment' untuk memulai."}
                                 </pre>
                             </div>
                         </div>
