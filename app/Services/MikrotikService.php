@@ -18,13 +18,26 @@ class MikrotikService
     public function connect(Router $router)
     {
         try {
-            $this->client = new Client([
+            $isSsl = ((int) $router->api_port === 8729);
+            
+            $config = [
                 'host' => $router->ip_address,
                 'user' => $router->username,
                 'pass' => $router->password ?? '',
                 'port' => (int) $router->api_port,
                 'timeout' => 3,
-            ]);
+            ];
+
+            if ($isSsl) {
+                $config['ssl'] = true;
+                $config['ssl_options'] = [
+                    'verify_peer' => false,
+                    'verify_peer_name' => false,
+                    'allow_self_signed' => true,
+                ];
+            }
+
+            $this->client = new Client($config);
             return true;
         } catch (Exception $e) {
             Log::error("Mikrotik Connection Failed: " . $e->getMessage());
