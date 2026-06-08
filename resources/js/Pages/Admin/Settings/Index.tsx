@@ -8,16 +8,20 @@ import {
     Save, 
     Info,
     Wifi,
-    CheckCircle2
+    CheckCircle2,
+    RefreshCw,
+    Terminal,
+    AlertTriangle
 } from 'lucide-react';
 import { useState, FormEvent, useEffect } from 'react';
 import axios from 'axios';
 
 interface Props {
     settings: Record<string, string>;
+    deployLog?: string;
 }
 
-export default function Index({ settings }: Props) {
+export default function Index({ settings, deployLog = '' }: Props) {
     const [activeTab, setActiveTab] = useState('general');
     const [waStatus, setWaStatus] = useState<'connected' | 'disconnected' | 'qr' | 'connecting'>('connecting');
     const [qrCode, setQrCode] = useState<string | null>(null);
@@ -31,6 +35,16 @@ export default function Index({ settings }: Props) {
         enable_email_notifications: settings.enable_email_notifications || 'yes',
         enable_wa_notifications: settings.enable_wa_notifications || 'yes',
     });
+
+    const { post: postUpdate, processing: processingUpdate } = useForm();
+
+    const handleRunUpdate = () => {
+        if (!confirm('Apakah Anda yakin ingin menjalankan update sistem sekarang? Proses ini akan memakan waktu 1-2 menit.')) return;
+        postUpdate(route('admin.settings.update-system'), {
+            preserveScroll: true,
+            onSuccess: () => alert('Proses update sistem selesai!'),
+        });
+    };
 
     useEffect(() => {
         let interval: any;
@@ -86,11 +100,90 @@ export default function Index({ settings }: Props) {
                     >
                         <MessageSquare className="w-4 h-4" /> WA Gateway
                     </button>
+                    <button 
+                        onClick={() => setActiveTab('update')}
+                        className={`w-full flex items-center gap-3 px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'update' ? 'bg-indigo-600 text-white dark:' : 'bg-white dark:bg-gray-800 text-gray-400 hover:bg-gray-50'}`}
+                    >
+                        <RefreshCw className="w-4 h-4" /> Update Sistem
+                    </button>
                 </div>
 
                 {/* Main Content Form */}
                 <div className="flex-1">
-                    <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-[3rem] p-10 border border-gray-100 dark:border-gray-700 dark:">
+                    {activeTab === 'update' ? (
+                        <div className="bg-white dark:bg-gray-800 rounded-[3rem] p-10 border border-gray-100 dark:border-gray-700 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                            <div className="flex items-center gap-4 mb-4">
+                                <div className="w-12 h-12 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600">
+                                    <RefreshCw className="w-6 h-6 animate-spin" />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest">Update & Sinkronisasi Sistem</h3>
+                                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Tarik pembaruan kode terbaru dan terapkan perubahan secara otomatis</p>
+                                </div>
+                            </div>
+
+                            <div className="bg-indigo-50/50 dark:bg-indigo-950/10 p-6 rounded-2xl border border-indigo-100/50 dark:border-indigo-900/10 space-y-2">
+                                <h4 className="text-[10px] font-black text-indigo-800 dark:text-indigo-300 uppercase tracking-widest">Penjelasan Proses:</h4>
+                                <ul className="text-[10px] font-bold text-indigo-600 dark:text-indigo-400 space-y-1 list-disc list-inside uppercase tracking-wider">
+                                    <li>Menarik kode terbaru dari GitHub (`git pull`)</li>
+                                    <li>Memasang / memperbarui dependensi PHP (`composer install`)</li>
+                                    <li>Menjalankan migrasi database (`php artisan migrate`)</li>
+                                    <li>Membangun ulang aset frontend menggunakan Vite (`npm install` & `vite build`)</li>
+                                    <li>Membersihkan semua cache sistem agar pembaruan langsung aktif</li>
+                                </ul>
+                            </div>
+
+                            <div className="p-6 bg-amber-50/50 dark:bg-amber-950/10 border border-amber-100/50 dark:border-amber-900/10 rounded-2xl flex items-start gap-4">
+                                <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                                <div>
+                                    <p className="text-[10px] font-black text-amber-800 dark:text-amber-300 uppercase tracking-widest mb-1">PENTING:</p>
+                                    <p className="text-[10px] font-bold text-amber-600 dark:text-amber-400 leading-relaxed uppercase tracking-widest">
+                                        Proses update dapat memakan waktu 1 hingga 2 menit karena melakukan instalasi dependensi NPM dan kompilasi Vite di server Anda.
+                                        Mohon jangan menutup halaman ini atau merefresh browser saat proses sedang berjalan.
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-4">
+                                <button
+                                    type="button"
+                                    onClick={handleRunUpdate}
+                                    disabled={processingUpdate}
+                                    className="flex items-center gap-3 bg-indigo-600 text-white px-10 py-5 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-indigo-700 transition-all disabled:opacity-50"
+                                >
+                                    {processingUpdate ? (
+                                        <>
+                                            <RefreshCw className="w-5 h-5 animate-spin" />
+                                            Sedang Memproses Update...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <RefreshCw className="w-5 h-5" />
+                                            Jalankan Auto Deployment
+                                        </>
+                                    )}
+                                </button>
+                            </div>
+
+                            <div className="border-t border-gray-100 dark:border-gray-700 pt-8">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h4 className="text-[10px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                                        <Terminal className="w-4 h-4 text-gray-400" /> Log Output Deployment Terakhir
+                                    </h4>
+                                    {deployLog && (
+                                        <span className="text-[9px] font-bold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-2.5 py-1 rounded-md uppercase tracking-wider">
+                                            Log Tersedia
+                                        </span>
+                                    )}
+                                </div>
+
+                                <pre className="p-6 bg-gray-900 text-gray-100 rounded-2xl font-mono text-xs overflow-x-auto whitespace-pre-wrap max-h-[24rem] custom-scrollbar border border-gray-800 shadow-inner">
+                                    {deployLog || "Belum ada log update terbaru. Klik tombol 'Jalankan Auto Deployment' untuk memulai."}
+                                </pre>
+                            </div>
+                        </div>
+                    ) : (
+                        <form onSubmit={handleSubmit} className="bg-white dark:bg-gray-800 rounded-[3rem] p-10 border border-gray-100 dark:border-gray-700 dark:">
                         
                         {activeTab === 'general' && (
                             <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -286,6 +379,7 @@ export default function Index({ settings }: Props) {
                             </button>
                         </div>
                     </form>
+                    )}
 
                     {/* Status Card */}
                     <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">

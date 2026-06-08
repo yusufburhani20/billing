@@ -12,10 +12,48 @@ class SettingController extends Controller
     public function index()
     {
         $settings = Setting::pluck('value', 'key')->toArray();
+        $deployLogPath = storage_path('logs/deploy.log');
+        $deployLog = file_exists($deployLogPath) ? file_get_contents($deployLogPath) : '';
         
         return Inertia::render('Admin/Settings/Index', [
-            'settings' => $settings
+            'settings' => $settings,
+            'deployLog' => $deployLog
         ]);
+    }
+
+    public function updateSystem()
+    {
+        set_time_limit(300);
+
+        $deployLogPath = storage_path('logs/deploy.log');
+
+        if (!function_exists('exec')) {
+            $errorMsg = "Fungsi PHP 'exec' dinonaktifkan di server Anda. Silakan hapus 'exec' dari list 'disable_functions' di pengaturan PHP aaPanel Anda.";
+            @file_put_contents($deployLogPath, "[ERROR] " . $errorMsg);
+            return redirect()->back()->with('error', $errorMsg);
+        }
+
+        $scriptPath = base_path('deploy.sh');
+
+        if (!file_exists($scriptPath)) {
+            $errorMsg = "Script deploy.sh tidak ditemukan di " . $scriptPath;
+            @file_put_contents($deployLogPath, "[ERROR] " . $errorMsg);
+            return redirect()->back()->with('error', $errorMsg);
+        }
+
+        // Run the script and capture output
+        $output = [];
+        $resultCode = null;
+        exec("bash {$scriptPath} 2>&1", $output, $resultCode);
+
+        $outputStr = implode("\n", $output);
+        @file_put_contents($deployLogPath, $outputStr);
+
+        if ($resultCode === 0) {
+            return redirect()->back()->with('message', 'Update sistem berhasil dijalankan!');
+        } else {
+            return redirect()->back()->with('error', 'Update sistem gagal dijalankan. Silakan cek log.');
+        }
     }
 
     public function update(Request $request)
