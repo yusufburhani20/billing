@@ -35,6 +35,10 @@ class RouterController extends Controller
             'description' => 'nullable|string',
         ]);
 
+        if (is_null($validated['password'])) {
+            $validated['password'] = '';
+        }
+
         Router::create($validated);
 
         return redirect()->back()->with('message', 'Router created successfully.');
@@ -50,6 +54,10 @@ class RouterController extends Controller
             'password' => 'nullable|string',
             'description' => 'nullable|string',
         ]);
+
+        if (is_null($validated['password']) || $validated['password'] === '') {
+            unset($validated['password']);
+        }
 
         $router->update($validated);
 
