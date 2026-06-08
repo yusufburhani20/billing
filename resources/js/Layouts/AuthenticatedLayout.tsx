@@ -292,7 +292,7 @@ export default function Authenticated({
                                 }}
                                 className="flex items-center gap-3 p-1.5 pr-4 rounded-2xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all border border-transparent hover:border-gray-100 dark:hover:border-gray-600"
                             >
-                                <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center text-white text-xs font-black dark:">
+                                <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center text-white text-xs font-black">
                                     {auth.user.name.substring(0, 1).toUpperCase()}
                                 </div>
                                 <div className="hidden md:block text-left">

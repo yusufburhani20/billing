@@ -1,10 +1,8 @@
+import { useEffect, FormEventHandler } from 'react';
 import InputError from '@/Components/InputError';
-import InputLabel from '@/Components/InputLabel';
-import PrimaryButton from '@/Components/PrimaryButton';
-import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, useForm } from '@inertiajs/react';
-import { FormEventHandler } from 'react';
+import { Mail, Lock, ArrowRight } from 'lucide-react';
 
 export default function ResetPassword({
     token,
@@ -20,9 +18,14 @@ export default function ResetPassword({
         password_confirmation: '',
     });
 
+    useEffect(() => {
+        return () => {
+            reset('password', 'password_confirmation');
+        };
+    }, []);
+
     const submit: FormEventHandler = (e) => {
         e.preventDefault();
-
         post(route('password.store'), {
             onFinish: () => reset('password', 'password_confirmation'),
         });
@@ -32,67 +35,76 @@ export default function ResetPassword({
         <GuestLayout>
             <Head title="Reset Password" />
 
-            <form onSubmit={submit}>
-                <div>
-                    <InputLabel htmlFor="email" value="Email" />
+            <div className="mb-6 text-center">
+                <h2 className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight">Reset Password</h2>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mt-1">Buat Kata Sandi Baru Anda</p>
+            </div>
 
-                    <TextInput
-                        id="email"
-                        type="email"
-                        name="email"
-                        value={data.email}
-                        className="mt-1 block w-full"
-                        autoComplete="username"
-                        onChange={(e) => setData('email', e.target.value)}
-                    />
-
-                    <InputError message={errors.email} className="mt-2" />
+            <form onSubmit={submit} className="space-y-4">
+                {/* Email Field */}
+                <div className="group">
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 block group-focus-within:text-[#166534] transition-colors">
+                        Email Address
+                    </label>
+                    <div className="relative">
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#166534] transition-colors" />
+                        <input
+                            type="email"
+                            placeholder="nama@email.com"
+                            value={data.email}
+                            onChange={(e) => setData('email', e.target.value)}
+                            required
+                            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-xs font-medium focus:ring-1 focus:ring-[#166534] focus:border-[#166534] transition-all dark:text-white shadow-sm"
+                        />
+                    </div>
+                    <InputError message={errors.email} className="mt-1" />
                 </div>
 
-                <div className="mt-4">
-                    <InputLabel htmlFor="password" value="Password" />
-
-                    <TextInput
-                        id="password"
-                        type="password"
-                        name="password"
-                        value={data.password}
-                        className="mt-1 block w-full"
-                        autoComplete="new-password"
-                        isFocused={true}
-                        onChange={(e) => setData('password', e.target.value)}
-                    />
-
-                    <InputError message={errors.password} className="mt-2" />
+                {/* Password Field */}
+                <div className="group">
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 block group-focus-within:text-[#166534] transition-colors">
+                        New Password
+                    </label>
+                    <div className="relative">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#166534] transition-colors" />
+                        <input
+                            type="password"
+                            placeholder="••••••••••••"
+                            value={data.password}
+                            onChange={(e) => setData('password', e.target.value)}
+                            required
+                            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-xs font-medium focus:ring-1 focus:ring-[#166534] focus:border-[#166534] transition-all dark:text-white shadow-sm"
+                        />
+                    </div>
+                    <InputError message={errors.password} className="mt-1" />
                 </div>
 
-                <div className="mt-4">
-                    <InputLabel
-                        htmlFor="password_confirmation"
-                        value="Confirm Password"
-                    />
-
-                    <TextInput
-                        type="password"
-                        name="password_confirmation"
-                        value={data.password_confirmation}
-                        className="mt-1 block w-full"
-                        autoComplete="new-password"
-                        onChange={(e) =>
-                            setData('password_confirmation', e.target.value)
-                        }
-                    />
-
-                    <InputError
-                        message={errors.password_confirmation}
-                        className="mt-2"
-                    />
+                {/* Confirm Password Field */}
+                <div className="group">
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 mb-1.5 block group-focus-within:text-[#166534] transition-colors">
+                        Confirm Password
+                    </label>
+                    <div className="relative">
+                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-[#166534] transition-colors" />
+                        <input
+                            type="password"
+                            placeholder="••••••••••••"
+                            value={data.password_confirmation}
+                            onChange={(e) => setData('password_confirmation', e.target.value)}
+                            required
+                            className="w-full pl-12 pr-4 py-3 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-700 rounded-xl text-xs font-medium focus:ring-1 focus:ring-[#166534] focus:border-[#166534] transition-all dark:text-white shadow-sm"
+                        />
+                    </div>
+                    <InputError message={errors.password_confirmation} className="mt-1" />
                 </div>
 
-                <div className="mt-4 flex items-center justify-end">
-                    <PrimaryButton className="ms-4" disabled={processing}>
-                        Reset Password
-                    </PrimaryButton>
+                <div className="pt-2">
+                    <button
+                        disabled={processing}
+                        className="w-full bg-[#166534] hover:bg-green-900 text-white py-3 rounded-xl text-xs font-bold uppercase tracking-wider transition-colors flex items-center justify-center gap-2 disabled:opacity-50 shadow-md shadow-green-800/10"
+                    >
+                        {processing ? 'Processing...' : 'Reset Password'} <ArrowRight className="w-4 h-4" />
+                    </button>
                 </div>
             </form>
         </GuestLayout>

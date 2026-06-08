@@ -162,7 +162,7 @@ export default function Dashboard({ customer, invoices }: Props) {
                     
                     {/* Welcome Banner if No Package */}
                     {!customer.package && (
-                        <div className="bg-gradient-to-r from-indigo-600 to-purple-700 rounded-[3rem] p-10 text-white relative overflow-hidden animate-in fade-in slide-in-from-top-4 duration-700">
+                        <div className="bg-indigo-600 rounded-[3rem] p-10 text-white relative overflow-hidden animate-in fade-in slide-in-from-top-4 duration-700">
                             <div className="relative z-10 max-w-2xl">
                                 <h3 className="text-2xl font-black uppercase tracking-tighter mb-2">Selamat Datang di Idrisiyyah Net!</h3>
                                 <p className="text-indigo-100 font-bold text-sm leading-relaxed mb-6">Akun Anda sudah terdaftar. Silakan pilih paket internet Anda untuk memulai pengalaman internet cepat tanpa batas.</p>

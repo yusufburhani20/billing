@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { 
     Send, 
     ArrowLeft, 
@@ -49,9 +49,9 @@ export default function Show({ ticket }: Props) {
         <AuthenticatedLayout
             header={
                 <div className="flex items-center gap-4">
-                    <a href={route('customer.tickets.index')} className="p-2 bg-white rounded-xl hover:bg-gray-50 transition-all">
+                    <Link href={route('customer.tickets.index')} className="p-2 bg-white rounded-xl hover:bg-gray-50 transition-all">
                         <ArrowLeft className="w-5 h-5 text-gray-500" />
-                    </a>
+                    </Link>
                     <h2 className="text-xl font-black text-gray-800 dark:text-gray-200 uppercase tracking-tight">
                         Ticket <span className="text-indigo-600">#{ticket.ticket_number || ticket.id}</span>
                     </h2>
