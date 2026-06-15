@@ -92,6 +92,21 @@ export default function Index({ settings, deployLog = '' }: Props) {
         });
     };
 
+    const handleWaLogout = async () => {
+        if (!confirm('Apakah Anda yakin ingin memutuskan koneksi WhatsApp?')) return;
+        setWaStatus('connecting');
+        setQrCode(null);
+        try {
+            const csrfToken = (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content;
+            await axios.post(route('admin.settings.whatsapp-logout'), {}, {
+                headers: { 'X-CSRF-TOKEN': csrfToken },
+            });
+            alert('Koneksi WhatsApp berhasil diputuskan. Silakan scan ulang QR Code yang baru.');
+        } catch (error: any) {
+            alert('Gagal memutuskan koneksi: ' + (error.response?.data?.message || error.message));
+        }
+    };
+
     return (
         <AuthenticatedLayout
             header={
@@ -354,7 +369,7 @@ export default function Index({ settings, deployLog = '' }: Props) {
                                             <button 
                                                 type="button"
                                                 className="px-6 py-3 bg-rose-50 text-rose-600 text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-rose-100 transition-all"
-                                                onClick={() => alert('Fitur logout akan segera hadir')}
+                                                onClick={handleWaLogout}
                                             >
                                                 Putuskan Koneksi
                                             </button>

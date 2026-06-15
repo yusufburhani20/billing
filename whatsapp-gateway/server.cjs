@@ -50,10 +50,24 @@ async function connectToWhatsApp() {
         }
 
         if (connection === "close") {
-            const shouldReconnect = (lastDisconnect.error instanceof Boom) ? lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut : true;
+            const isLoggedOut = (lastDisconnect.error instanceof Boom) && lastDisconnect.error.output.statusCode === DisconnectReason.loggedOut;
             connectionStatus = "disconnected";
             io.emit("status", "disconnected");
-            if (shouldReconnect) {
+            
+            if (isLoggedOut) {
+                console.log("WA Logged Out. Clearing credentials...");
+                try {
+                    const fs = require("fs");
+                    const authPath = path.join(__dirname, 'auth_info_baileys');
+                    if (fs.existsSync(authPath)) {
+                        fs.rmSync(authPath, { recursive: true, force: true });
+                    }
+                } catch (err) {
+                    console.error("Error deleting auth info:", err);
+                }
+                // Instantly try connecting again to show fresh QR code
+                connectToWhatsApp();
+            } else {
                 connectToWhatsApp();
             }
         } else if (connection === "open") {
@@ -67,6 +81,32 @@ async function connectToWhatsApp() {
 
     sock.ev.on("creds.update", saveCreds);
 }
+
+// API to Logout / Disconnect WhatsApp
+app.post("/logout", async (req, res) => {
+    try {
+        if (sock) {
+            await sock.logout();
+        }
+        res.json({ status: true, message: "Logged out successfully" });
+    } catch (error) {
+        // If logout method fails, force clear credentials directory and restart connection
+        try {
+            if (sock) sock.end(undefined);
+        } catch (e) {}
+        try {
+            const fs = require("fs");
+            const authPath = path.join(__dirname, 'auth_info_baileys');
+            if (fs.existsSync(authPath)) {
+                fs.rmSync(authPath, { recursive: true, force: true });
+            }
+        } catch (err) {
+            console.error("Error forcing auth info deletion:", err);
+        }
+        connectToWhatsApp();
+        res.json({ status: true, message: "Forced logout and cleared credentials" });
+    }
+});
 
 // API to Send Message
 app.post("/send-message", async (req, res) => {

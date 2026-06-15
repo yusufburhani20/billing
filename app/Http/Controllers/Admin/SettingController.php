@@ -108,4 +108,17 @@ class SettingController extends Controller
             return response()->json(['status' => 'disconnected', 'qr' => null]);
         }
     }
+
+    public function logoutWhatsapp()
+    {
+        try {
+            $response = \Illuminate\Support\Facades\Http::timeout(5)->post(rtrim(env('WA_GATEWAY_URL', 'http://localhost:3002'), '/') . '/logout');
+            if ($response->successful()) {
+                return response()->json($response->json());
+            }
+            return response()->json(['status' => false, 'message' => 'Gagal memutus koneksi gateway.'], 500);
+        } catch (\Exception $e) {
+            return response()->json(['status' => false, 'message' => $e->getMessage()], 500);
+        }
+    }
 }
