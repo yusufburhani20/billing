@@ -41,7 +41,12 @@ class SendWhatsAppMessageJob implements ShouldQueue
         $sent = $waService->sendMessage($this->target, $this->message);
 
         if (!$sent) {
-            throw new \Exception("Gagal mengirim WhatsApp ke {$this->target}");
+            $errorMsg = "Gagal mengirim WhatsApp ke {$this->target}";
+            if (config('queue.default') === 'sync') {
+                Log::warning($errorMsg . " (Skipped exception because queue connection is sync)");
+            } else {
+                throw new \Exception($errorMsg);
+            }
         }
     }
 }

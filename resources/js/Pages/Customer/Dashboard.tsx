@@ -12,10 +12,11 @@ import {
     AlertCircle,
     ArrowRight,
     Zap,
-    Info,
-    X
+    X,
+    ImageIcon,
+    Loader2,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 
 interface Invoice {
     id: number;
@@ -50,13 +51,69 @@ declare global {
     }
 }
 
+/**
+ * Kompres gambar di sisi browser sebelum upload ke server.
+ * Mengurangi ukuran dari 3-8MB menjadi ~100-300KB.
+ */
+function compressImage(file: File, maxWidthPx = 1280, quality = 0.75): Promise<File> {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => {
+            const img = new Image();
+            img.src = e.target?.result as string;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let { width, height } = img;
+                if (width > maxWidthPx) {
+                    height = Math.round((height * maxWidthPx) / width);
+                    width = maxWidthPx;
+                }
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d')!;
+                ctx.drawImage(img, 0, 0, width, height);
+                canvas.toBlob(
+                    (blob) => {
+                        if (!blob) { resolve(file); return; }
+                        resolve(new File([blob], file.name.replace(/\.[^.]+$/, '.jpg'), {
+                            type: 'image/jpeg',
+                            lastModified: Date.now(),
+                        }));
+                    },
+                    'image/jpeg',
+                    quality,
+                );
+            };
+            img.onerror = () => resolve(file);
+        };
+        reader.onerror = () => resolve(file);
+    });
+}
+
 export default function Dashboard({ customer, invoices }: Props) {
     const { flash } = usePage<any>().props;
     const [selectingMethod, setSelectingMethod] = useState<Invoice | null>(null);
+    const [compressing, setCompressing]         = useState(false);
+    const [previewInfo, setPreviewInfo]         = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
     const { post } = useForm();
     const uploadForm = useForm({
         payment_proof: null as File | null,
     });
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const raw = e.target.files?.[0];
+        if (!raw) return;
+        const originalKB = (raw.size / 1024).toFixed(0);
+        setCompressing(true);
+        setPreviewInfo(null);
+        const compressed = await compressImage(raw);
+        const compressedKB = (compressed.size / 1024).toFixed(0);
+        uploadForm.setData('payment_proof', compressed);
+        setPreviewInfo(`${originalKB} KB → ${compressedKB} KB`);
+        setCompressing(false);
+    };
 
     const currentInvoice = invoices.find(inv => inv.status === 'unpaid');
     const dueDateDisplay = currentInvoice 
@@ -297,25 +354,40 @@ export default function Dashboard({ customer, invoices }: Props) {
 
                             <form onSubmit={(e) => {
                                 e.preventDefault();
+                                if (compressing) return;
+                                setPreviewInfo(null);
                                 uploadForm.post(route('customer.invoices.upload-proof', selectingMethod.id), {
                                     onSuccess: () => {
                                         setSelectingMethod(null);
                                         uploadForm.reset();
-                                        alert('Bukti transfer berhasil dikirim. Menunggu verifikasi admin.');
+                                        setPreviewInfo(null);
                                     }
                                 });
                             }} className="space-y-4">
                                 <div>
                                     <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block">Unggah Bukti Transfer</label>
-                                    <input 
-                                        type="file" 
+                                    <input
+                                        ref={fileInputRef}
+                                        type="file"
                                         accept="image/*"
-                                        onChange={(e) => uploadForm.setData('payment_proof', e.target.files?.[0] || null)}
+                                        onChange={handleFileChange}
                                         required
                                         className="w-full text-xs text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100 dark:file:bg-gray-700 dark:file:text-white cursor-pointer"
                                     />
+                                    {compressing && (
+                                        <div className="flex items-center gap-2 mt-2 text-[10px] font-bold text-indigo-500 uppercase tracking-widest">
+                                            <Loader2 className="w-3 h-3 animate-spin" />
+                                            Mengompres gambar...
+                                        </div>
+                                    )}
+                                    {previewInfo && !compressing && (
+                                        <div className="flex items-center gap-2 mt-2 text-[10px] font-bold text-emerald-600 uppercase tracking-widest">
+                                            <ImageIcon className="w-3 h-3" />
+                                            Ukuran dioptimalkan: {previewInfo}
+                                        </div>
+                                    )}
                                     <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-1.5 leading-normal">
-                                        Format: JPG, JPEG, PNG. Maksimal 2MB.
+                                        Gambar akan dikompres otomatis untuk mempercepat upload.
                                     </p>
                                     {uploadForm.errors.payment_proof && (
                                         <span className="text-xs text-red-500 font-bold block mt-1">{uploadForm.errors.payment_proof}</span>
@@ -325,17 +397,22 @@ export default function Dashboard({ customer, invoices }: Props) {
                                 <div className="pt-2 flex gap-3">
                                     <button
                                         type="button"
-                                        onClick={() => setSelectingMethod(null)}
+                                        onClick={() => { setSelectingMethod(null); setPreviewInfo(null); }}
                                         className="flex-1 py-3 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-300 transition-all border-none"
                                     >
                                         Batal
                                     </button>
                                     <button
                                         type="submit"
-                                        disabled={uploadForm.processing}
-                                        className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 border-none shadow-md shadow-indigo-100 dark:shadow-none"
+                                        disabled={uploadForm.processing || compressing || !uploadForm.data.payment_proof}
+                                        className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 border-none shadow-md shadow-indigo-100 dark:shadow-none flex items-center justify-center gap-2"
                                     >
-                                        {uploadForm.processing ? 'Mengirim...' : 'Kirim Bukti'}
+                                        {uploadForm.processing
+                                            ? <><Loader2 className="w-3 h-3 animate-spin" /> Mengirim...</>
+                                            : compressing
+                                                ? <><Loader2 className="w-3 h-3 animate-spin" /> Memproses...</>
+                                                : 'Kirim Bukti'
+                                        }
                                     </button>
                                 </div>
                             </form>

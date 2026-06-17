@@ -11,6 +11,7 @@ use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Log;
 
 class SendAdminPaymentProofEmailJob implements ShouldQueue
 {
@@ -34,9 +35,17 @@ class SendAdminPaymentProofEmailJob implements ShouldQueue
             return;
         }
 
-        // Using Notification::route() inside the queued job works correctly
-        // because here we are already running inside the queue worker process
-        Notification::route('mail', $this->adminEmail)
-            ->notify(new AdminPaymentProofUploadedNotification($invoice));
+        try {
+            // Using Notification::route() inside the queued job works correctly
+            // because here we are already running inside the queue worker process
+            Notification::route('mail', $this->adminEmail)
+                ->notify(new AdminPaymentProofUploadedNotification($invoice));
+        } catch (\Exception $e) {
+            if (config('queue.default') === 'sync') {
+                Log::warning("Failed to send admin payment proof email: " . $e->getMessage() . " (Skipped exception because queue connection is sync)");
+            } else {
+                throw $e;
+            }
+        }
     }
 }
