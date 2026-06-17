@@ -43,6 +43,7 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::resource('invoices', \App\Http\Controllers\Admin\InvoiceController::class);
     Route::get('invoices/{invoice}/print', [\App\Http\Controllers\Admin\InvoiceController::class, 'print'])->name('invoices.print');
     Route::post('invoices/{invoice}/pay', [\App\Http\Controllers\Admin\InvoiceController::class, 'markAsPaid'])->name('invoices.pay');
+    Route::post('invoices/{invoice}/reject-payment', [\App\Http\Controllers\Admin\InvoiceController::class, 'rejectPayment'])->name('invoices.reject-payment');
     Route::post('invoices/{invoice}/whatsapp', [\App\Http\Controllers\Admin\InvoiceController::class, 'sendWhatsapp'])->name('invoices.whatsapp');
     Route::post('invoices/{invoice}/email', [\App\Http\Controllers\Admin\InvoiceController::class, 'sendEmail'])->name('invoices.email');
 
@@ -82,6 +83,7 @@ Route::middleware(['auth'])->prefix('customer')->name('customer.')->group(functi
 
     // Invoices
     Route::get('/invoices', [\App\Http\Controllers\Customer\InvoiceController::class, 'index'])->name('invoices.index');
+    Route::post('/invoices/{invoice}/upload-proof', [\App\Http\Controllers\Customer\InvoiceController::class, 'uploadProof'])->name('invoices.upload-proof');
 
     // Ticket Management
     Route::resource('tickets', \App\Http\Controllers\Customer\TicketController::class);

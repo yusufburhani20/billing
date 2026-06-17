@@ -23,6 +23,7 @@ interface Invoice {
     amount: number;
     status: 'unpaid' | 'paid' | 'expired';
     due_date: string;
+    payment_proof?: string | null;
 }
 
 interface IPackage {
@@ -51,82 +52,16 @@ declare global {
 
 export default function Dashboard({ customer, invoices }: Props) {
     const { flash } = usePage<any>().props;
-    const [paying, setPaying] = useState<number | null>(null);
     const [selectingMethod, setSelectingMethod] = useState<Invoice | null>(null);
-    const { post, processing } = useForm();
+    const { post } = useForm();
+    const uploadForm = useForm({
+        payment_proof: null as File | null,
+    });
 
     const currentInvoice = invoices.find(inv => inv.status === 'unpaid');
     const dueDateDisplay = currentInvoice 
         ? new Date(currentInvoice.due_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })
         : `Tgl 20 Setiap Bulan`;
-
-    const PAYMENT_METHODS = [
-        { id: 'bca_va', name: 'BCA Virtual Account', icon: '🏦', base: 4000, vat: 440, type: 'flat' },
-        { id: 'mandiri_va', name: 'Mandiri Virtual Account', icon: '🏦', base: 4000, vat: 440, type: 'flat' },
-        { id: 'bni_va', name: 'BNI Virtual Account', icon: '🏦', base: 4000, vat: 440, type: 'flat' },
-        { id: 'bri_va', name: 'BRI Virtual Account', icon: '🏦', base: 4000, vat: 440, type: 'flat' },
-        { id: 'qris', name: 'QRIS', icon: '📱', base: 0.007, vat: 0.00077, type: 'percent' },
-        { id: 'gopay', name: 'GoPay', icon: '📱', base: 0.02, vat: 0.0022, type: 'percent' },
-        { id: 'shopeepay', name: 'ShopeePay', icon: '📱', base: 0.02, vat: 0.0022, type: 'percent' },
-        { id: 'alfamart', name: 'Alfamart', icon: '🏪', base: 5000, vat: 550, type: 'flat' },
-        { id: 'indomaret', name: 'Indomaret', icon: '🏪', fee: 5550, base: 5000, vat: 550, type: 'flat' },
-    ];
-
-    const calculateFee = (invoice: Invoice, method: typeof PAYMENT_METHODS[0]) => {
-        const amount = Number(invoice.amount);
-        if (method.type === 'percent') {
-            const base = Math.ceil(amount * method.base);
-            const vat = Math.ceil(amount * method.vat);
-            return { base, vat, total: base + vat };
-        }
-        return { base: method.base, vat: method.vat, total: method.base + method.vat };
-    };
-
-    const handlePay = async (invoice: Invoice, methodId: string) => {
-        const method = PAYMENT_METHODS.find(m => m.id === methodId);
-        if (!method) return;
-
-        const fee = calculateFee(invoice, method);
-
-        setPaying(invoice.id);
-        setSelectingMethod(null);
-        
-        try {
-            const response = await fetch(route('customer.payment.snap-token', invoice.id), {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as HTMLMetaElement)?.content,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ 
-                    payment_method: methodId,
-                    admin_fee: fee.total
-                })
-            });
-            const data = await response.json();
-            
-            if (data.token) {
-                window.snap.pay(data.token, {
-                    onSuccess: function(result: any) {
-                        alert("Pembayaran Berhasil!");
-                        location.reload();
-                    },
-                    onPending: function(result: any) {
-                        alert("Menunggu Pembayaran...");
-                    },
-                    onError: function(result: any) {
-                        alert("Pembayaran Gagal!");
-                    },
-                    onClose: function() {
-                        setPaying(null);
-                    }
-                });
-            }
-        } catch (error) {
-            console.error(error);
-            setPaying(null);
-        }
-    };
 
     const handleSelectPackage = (packageId: number) => {
         if (confirm('Konfirmasi pilihan paket ini? Anda akan langsung mendapatkan invoice untuk aktivasi.')) {
@@ -282,22 +217,26 @@ export default function Dashboard({ customer, invoices }: Props) {
                                                 <td className="px-8 py-6 font-bold text-gray-700 dark:text-gray-300">{inv.invoice_number}</td>
                                                 <td className="px-8 py-6 font-black text-gray-900 dark:text-white">Rp {Number(inv.amount).toLocaleString('id-ID')}</td>
                                                 <td className="px-8 py-6 text-center">
-                                                    {inv.status === 'paid' ? (
-                                                        <span className="px-3 py-1 bg-green-50 text-green-600 rounded-full text-[10px] font-black uppercase tracking-widest">Lunas</span>
-                                                    ) : (
-                                                        <span className="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-[10px] font-black uppercase tracking-widest">Belum Bayar</span>
-                                                    )}
+                                                     {inv.status === 'paid' ? (
+                                                         <span className="px-3 py-1 bg-green-50 text-green-600 rounded-full text-[10px] font-black uppercase tracking-widest">Lunas</span>
+                                                     ) : inv.payment_proof ? (
+                                                         <span className="px-3 py-1 bg-cyan-50 text-cyan-600 rounded-full text-[10px] font-black uppercase tracking-widest">Menunggu Verifikasi</span>
+                                                     ) : (
+                                                         <span className="px-3 py-1 bg-amber-50 text-amber-600 rounded-full text-[10px] font-black uppercase tracking-widest">Belum Bayar</span>
+                                                     )}
                                                 </td>
                                                 <td className="px-8 py-6 text-right">
-                                                    {inv.status === 'unpaid' && (
-                                                        <button 
-                                                            onClick={() => setSelectingMethod(inv)}
-                                                            disabled={paying === inv.id || selectingMethod?.id === inv.id}
-                                                            className="px-6 py-2 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-indigo-700 transition-all disabled:opacity-50"
-                                                        >
-                                                            {paying === inv.id ? 'Memproses...' : 'Bayar Sekarang'}
-                                                        </button>
-                                                    )}
+                                                     {inv.status === 'unpaid' && !inv.payment_proof && (
+                                                         <button 
+                                                             onClick={() => setSelectingMethod(inv)}
+                                                             className="px-6 py-2 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-indigo-700 transition-all"
+                                                         >
+                                                             Bayar Sekarang
+                                                         </button>
+                                                     )}
+                                                     {inv.status === 'unpaid' && inv.payment_proof && (
+                                                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Bukti Diunggah</span>
+                                                     )}
                                                 </td>
                                             </tr>
                                         ))}
@@ -315,7 +254,7 @@ export default function Dashboard({ customer, invoices }: Props) {
                 </div>
             </div>
 
-            {/* Payment Method Selection Modal */}
+            {/* Bank Transfer Payment Modal */}
             {selectingMethod && (
                 <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
                     <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm animate-in fade-in duration-300" onClick={() => setSelectingMethod(null)} />
@@ -323,7 +262,7 @@ export default function Dashboard({ customer, invoices }: Props) {
                     <div className="bg-white dark:bg-gray-800 w-full max-w-lg rounded-[3rem] relative z-10 overflow-hidden animate-in zoom-in-95 slide-in-from-bottom-8 duration-300">
                         <div className="p-8 border-b border-gray-50 dark:border-gray-700 flex items-center justify-between">
                             <div>
-                                <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter">Pilih Metode Pembayaran</h3>
+                                <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-tighter">Transfer Bank</h3>
                                 <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Invoice #{selectingMethod.invoice_number}</p>
                             </div>
                             <button onClick={() => setSelectingMethod(null)} className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors">
@@ -331,45 +270,75 @@ export default function Dashboard({ customer, invoices }: Props) {
                             </button>
                         </div>
 
-                        <div className="p-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
-                            <div className="space-y-3">
-                                {PAYMENT_METHODS.map((method) => {
-                                    const fee = calculateFee(selectingMethod, method);
-                                    return (
-                                        <button
-                                            key={method.id}
-                                            onClick={() => handlePay(selectingMethod, method.id)}
-                                            className="w-full p-5 rounded-3xl border border-gray-100 dark:border-gray-700 hover:border-indigo-500 hover:bg-indigo-50/30 dark:hover:bg-indigo-900/20 transition-all flex items-center justify-between group"
-                                        >
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-12 h-12 bg-gray-50 dark:bg-gray-700 rounded-2xl flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">
-                                                    {method.icon}
-                                                </div>
-                                                <div className="text-left">
-                                                    <h4 className="text-xs font-black text-gray-900 dark:text-white uppercase tracking-tight">{method.name}</h4>
-                                                    <div className="flex flex-col gap-0.5 mt-1">
-                                                        <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">Admin Dasar: Rp {fee.base.toLocaleString('id-ID')}</p>
-                                                        <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest">PPN (11%): Rp {fee.vat.toLocaleString('id-ID')}</p>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-0.5">Total</p>
-                                                <p className="text-sm font-black text-indigo-600">Rp {(Number(selectingMethod.amount) + fee.total).toLocaleString('id-ID')}</p>
-                                            </div>
-                                        </button>
-                                    );
-                                })}
+                        <div className="p-8 space-y-6">
+                            <div className="bg-indigo-50/50 dark:bg-indigo-950/20 border border-indigo-100/50 dark:border-indigo-900/30 p-6 rounded-3xl">
+                                <h4 className="text-[10px] font-black text-indigo-950 dark:text-indigo-400 uppercase tracking-widest mb-3">Informasi Rekening</h4>
+                                <div className="space-y-2 text-xs font-bold text-gray-700 dark:text-gray-300">
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-400">Bank:</span>
+                                        <span className="text-gray-900 dark:text-white font-black">BNI</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-400">No. Rekening:</span>
+                                        <span className="text-gray-900 dark:text-white font-black text-sm">2007507509</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-gray-400">Atas Nama:</span>
+                                        <span className="text-gray-900 dark:text-white font-black">Yayasan Idrisiyyah</span>
+                                    </div>
+                                    <div className="flex justify-between border-t border-indigo-100/50 dark:border-indigo-900/30 pt-2 mt-2">
+                                        <span className="text-gray-400">Jumlah Transfer:</span>
+                                        <span className="text-indigo-600 dark:text-indigo-400 font-black text-base">
+                                            Rp {Number(selectingMethod.amount).toLocaleString('id-ID')}
+                                        </span>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
 
-                        <div className="p-8 bg-gray-50 dark:bg-gray-800/50 flex items-center gap-4">
-                            <div className="w-10 h-10 bg-indigo-100 dark:bg-indigo-900/40 rounded-xl flex items-center justify-center text-indigo-600 shrink-0">
-                                <Info className="w-5 h-5" />
-                            </div>
-                            <p className="text-[9px] font-bold text-gray-500 dark:text-gray-400 leading-relaxed uppercase tracking-wider">
-                                Biaya admin dibebankan sesuai kebijakan penyedia jasa pembayaran. Silakan pilih metode yang paling nyaman bagi Anda.
-                            </p>
+                            <form onSubmit={(e) => {
+                                e.preventDefault();
+                                uploadForm.post(route('customer.invoices.upload-proof', selectingMethod.id), {
+                                    onSuccess: () => {
+                                        setSelectingMethod(null);
+                                        uploadForm.reset();
+                                        alert('Bukti transfer berhasil dikirim. Menunggu verifikasi admin.');
+                                    }
+                                });
+                            }} className="space-y-4">
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block">Unggah Bukti Transfer</label>
+                                    <input 
+                                        type="file" 
+                                        accept="image/*"
+                                        onChange={(e) => uploadForm.setData('payment_proof', e.target.files?.[0] || null)}
+                                        required
+                                        className="w-full text-xs text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-indigo-50 file:text-indigo-600 hover:file:bg-indigo-100 dark:file:bg-gray-700 dark:file:text-white cursor-pointer"
+                                    />
+                                    <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest mt-1.5 leading-normal">
+                                        Format: JPG, JPEG, PNG. Maksimal 2MB.
+                                    </p>
+                                    {uploadForm.errors.payment_proof && (
+                                        <span className="text-xs text-red-500 font-bold block mt-1">{uploadForm.errors.payment_proof}</span>
+                                    )}
+                                </div>
+
+                                <div className="pt-2 flex gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectingMethod(null)}
+                                        className="flex-1 py-3 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-xl text-[10px] font-black uppercase tracking-widest text-gray-500 dark:text-gray-300 transition-all border-none"
+                                    >
+                                        Batal
+                                    </button>
+                                    <button
+                                        type="submit"
+                                        disabled={uploadForm.processing}
+                                        className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all disabled:opacity-50 border-none shadow-md shadow-indigo-100 dark:shadow-none"
+                                    >
+                                        {uploadForm.processing ? 'Mengirim...' : 'Kirim Bukti'}
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
                 </div>

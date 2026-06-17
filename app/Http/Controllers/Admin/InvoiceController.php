@@ -721,4 +721,16 @@ HTML;
 
         return redirect()->back()->with('message', "Sukses mengirimkan {$successCount} notifikasi Email secara masal.");
     }
+
+    public function rejectPayment(Invoice $invoice)
+    {
+        if ($invoice->payment_proof) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($invoice->payment_proof);
+            $invoice->update([
+                'payment_proof' => null
+            ]);
+        }
+
+        return redirect()->back()->with('message', 'Bukti pembayaran ditolak.');
+    }
 }

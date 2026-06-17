@@ -36,6 +36,7 @@ class Invoice extends Model
         'period_end',
         'due_date',
         'status',
+        'payment_proof',
         'paid_at',
         'notes',
     ];
