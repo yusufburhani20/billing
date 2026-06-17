@@ -113,12 +113,15 @@ class DashboardController extends Controller
 
         // Send WA Notification
         if ($customer->phone) {
+            $appName = \App\Models\Setting::getValue('app_name', 'Idrisiyyah Net');
             $message = "Halo *{$request->user()->name}*,\n\n" .
                        "Paket *{$package->name}* berhasil dipilih.\n" .
                        "Nomor Tagihan: #{$invoice->invoice_number}\n" .
-                       "Total: *Rp " . number_format($invoice->amount, 0, ',', '.') . "*\n\n" .
-                       "Silakan lakukan pembayaran langsung di Dashboard Member Area agar layanan dapat segera kami aktifkan.\n\n" .
-                       "-- Idrisiyyah Net --";
+                       "Total: Rp " . number_format($invoice->amount, 0, ',', '.') . "\n\n" .
+                       "Silakan lakukan pembayaran melalui link berikut agar layanan dapat segera kami aktifkan:\n" .
+                       route('customer.invoices.index') . "\n\n" .
+                       "Terima kasih.\n" .
+                       "-- {$appName} --";
             $this->wa->sendMessage($customer->phone, $message);
         }
 

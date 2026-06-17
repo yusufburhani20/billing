@@ -98,10 +98,11 @@ class PaymentController extends Controller
 
             // SEND WA NOTIFICATION
             if ($customer && $customer->phone) {
+                $appName = \App\Models\Setting::getValue('app_name', 'Idrisiyyah Net');
                 $message = "Terima kasih *{$customer->user->name}*,\n\n" .
                            "Pembayaran tagihan #{$invoice->invoice_number} sebesar *Rp " . number_format($invoice->amount, 0, ',', '.') . "* telah kami terima.\n\n" .
                            "Layanan internet Anda telah aktif kembali. Selamat berinternet!\n\n" .
-                           "-- Idrisiyyah Net --";
+                           "-- {$appName} --";
                 $this->wa->sendMessage($customer->phone, $message);
             }
 

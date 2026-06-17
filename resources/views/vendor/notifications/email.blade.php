@@ -40,7 +40,7 @@
 {{ $salutation }}
 @else
 @lang('Regards,')<br>
-{{ config('app.name') }}
+{{ \App\Models\Setting::getValue('app_name', 'Idrisiyyah Net') }}
 @endif
 
 {{-- Subcopy --}}

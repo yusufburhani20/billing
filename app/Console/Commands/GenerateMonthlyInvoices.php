@@ -62,14 +62,15 @@ class GenerateMonthlyInvoices extends Command
 
                 // SEND WHATSAPP NOTIFICATION
                 if ($customer->phone) {
+                    $appName = \App\Models\Setting::getValue('app_name', 'Idrisiyyah Net');
                     $message = "Halo *{$customer->user->name}*,\n\n" .
-                               "Tagihan internet **Idrisiyyah Net** Anda untuk periode ini telah terbit.\n\n" .
+                               "Tagihan internet **{$appName}** Anda untuk periode ini telah terbit.\n\n" .
                                "📌 *Detail Tagihan:*\n" .
                                "• No. Invoice: #{$invoice->invoice_number}\n" .
                                "• Jumlah: Rp " . number_format($invoice->amount, 0, ',', '.') . "\n" .
                                "• Jatuh Tempo: " . $invoice->due_date->format('d M Y') . "\n\n" .
-                               "Silakan lakukan pembayaran melalui portal pelanggan kami:\n" .
-                               route('login') . "\n\n" .
+                               "Silakan lakukan pembayaran melalui link berikut:\n" .
+                               route('customer.invoices.index') . "\n\n" .
                                "Terima kasih.";
                     
                     $this->wa->sendMessage($customer->phone, $message);

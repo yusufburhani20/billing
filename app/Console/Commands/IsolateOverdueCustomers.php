@@ -40,13 +40,14 @@ class IsolateOverdueCustomers extends Command
 
                 // SEND WA NOTIFICATION
                 if ($customer->phone) {
+                    $appName = \App\Models\Setting::getValue('app_name', 'Idrisiyyah Net');
                     $message = "⚠️ *PEMBERITAHUAN ISOLIR*\n\n" .
                                "Halo *{$customer->user->name}*,\n\n" .
                                "Layanan internet Anda untuk sementara kami nonaktifkan karena terdapat tagihan yang melewati jatuh tempo (#{$invoice->invoice_number}).\n\n" .
-                               "Silakan lakukan pembayaran agar layanan otomatis aktif kembali:\n" .
-                               route('login') . "\n\n" .
+                               "Silakan lakukan pembayaran melalui link berikut agar layanan otomatis aktif kembali:\n" .
+                               route('customer.invoices.index') . "\n\n" .
                                "Abaikan jika Anda sudah melakukan pembayaran.\n" .
-                               "-- Idrisiyyah Net --";
+                               "-- {$appName} --";
                     $this->wa->sendMessage($customer->phone, $message);
                 }
                 

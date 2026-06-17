@@ -92,13 +92,16 @@ class InvoiceController extends Controller
 
         // 2. KIRIM NOTIFIKASI WHATSAPP
         if ($customer->phone) {
+            $appName = \App\Models\Setting::getValue('app_name', 'Idrisiyyah Net');
             $message = "Halo *{$customer->user->name}*,\n\n" .
-                       "Tagihan internet Anda telah terbit.\n" .
-                       "Nomor: #{$invoice->invoice_number}\n" .
-                       "Jumlah: *Rp " . number_format($invoice->amount, 0, ',', '.') . "*\n" .
-                       "Jatuh Tempo: *{$invoice->due_date->format('d F Y')}*\n\n" .
-                       "Silakan lakukan pembayaran melalui portal pelanggan atau hubungi admin.\n\n" .
-                       "-- Idrisiyyah Net --";
+                       "Tagihan internet **{$appName}** Anda untuk periode ini telah terbit.\n\n" .
+                       "📌 *Detail Tagihan:*\n" .
+                       "• No. Invoice: #{$invoice->invoice_number}\n" .
+                       "• Jumlah: Rp " . number_format($invoice->amount, 0, ',', '.') . "\n" .
+                       "• Jatuh Tempo: " . $invoice->due_date->format('d M Y') . "\n\n" .
+                       "Silakan lakukan pembayaran melalui link berikut:\n" .
+                       route('customer.invoices.index') . "\n\n" .
+                       "Terima kasih.";
             $this->wa->sendMessage($customer->phone, $message);
         }
 
@@ -150,14 +153,15 @@ class InvoiceController extends Controller
 
                 // SEND WHATSAPP NOTIFICATION
                 if ($customer->phone) {
+                    $appName = \App\Models\Setting::getValue('app_name', 'Idrisiyyah Net');
                     $message = "Halo *{$customer->user->name}*,\n\n" .
-                               "Tagihan internet **Idrisiyyah Net** Anda untuk periode ini telah terbit.\n\n" .
+                               "Tagihan internet **{$appName}** Anda untuk periode ini telah terbit.\n\n" .
                                "📌 *Detail Tagihan:*\n" .
                                "• No. Invoice: #{$invoice->invoice_number}\n" .
                                "• Jumlah: Rp " . number_format($invoice->amount, 0, ',', '.') . "\n" .
                                "• Jatuh Tempo: " . $invoice->due_date->format('d M Y') . "\n\n" .
-                               "Silakan lakukan pembayaran melalui portal pelanggan kami:\n" .
-                               route('login') . "\n\n" .
+                               "Silakan lakukan pembayaran melalui link berikut:\n" .
+                               route('customer.invoices.index') . "\n\n" .
                                "Terima kasih.";
                     
                     $this->wa->sendMessage($customer->phone, $message);
@@ -202,10 +206,11 @@ class InvoiceController extends Controller
 
         // SEND WA CONFIRMATION
         if ($customer && $customer->phone) {
+            $appName = \App\Models\Setting::getValue('app_name', 'Idrisiyyah Net');
             $message = "Terima kasih *{$customer->user->name}*,\n\n" .
                        "Pembayaran tagihan #{$invoice->invoice_number} sebesar *Rp " . number_format($invoice->amount, 0, ',', '.') . "* telah kami terima.\n\n" .
                        "Layanan internet Anda telah aktif kembali. Selamat menikmati!\n\n" .
-                       "-- Idrisiyyah Net --";
+                       "-- {$appName} --";
             $this->wa->sendMessage($customer->phone, $message);
         }
 
@@ -235,6 +240,7 @@ class InvoiceController extends Controller
         $user = $customer->user;
         $package = $customer->package;
         $router = $customer->router;
+        $appName = \App\Models\Setting::getValue('app_name', 'Idrisiyyah Net');
         
         $payment = $invoice->payments->first();
         
@@ -488,7 +494,7 @@ HTML;
     <div class="invoice-card">
         <div class="header">
             <div class="logo-area">
-                <h1>Idrisiyyah Net</h1>
+                <h1>{$appName}</h1>
             </div>
             <div class="invoice-title">
                 <h2>#{$invoice->invoice_number}</h2>
@@ -587,20 +593,22 @@ HTML;
             return redirect()->back()->with('error', 'Nomor WhatsApp pelanggan tidak ditemukan.');
         }
 
+        $appName = \App\Models\Setting::getValue('app_name', 'Idrisiyyah Net');
+
         if ($invoice->status === 'paid') {
             $message = "Halo *{$customer->user->name}*,\n\n" .
-                       "Pembayaran tagihan internet **Idrisiyyah Net** #{$invoice->invoice_number} sebesar *Rp " . number_format($invoice->amount, 0, ',', '.') . "* telah kami terima.\n\n" .
+                       "Pembayaran tagihan internet **{$appName}** #{$invoice->invoice_number} sebesar *Rp " . number_format($invoice->amount, 0, ',', '.') . "* telah kami terima.\n\n" .
                        "Layanan internet Anda aktif secara normal. Terima kasih atas kepercayaan Anda!\n\n" .
-                       "-- Idrisiyyah Net --";
+                       "-- {$appName} --";
         } else {
             $message = "Halo *{$customer->user->name}*,\n\n" .
-                       "Ini adalah pengingat tagihan internet **Idrisiyyah Net** Anda yang belum terbayar.\n\n" .
+                       "Ini adalah pengingat tagihan internet **{$appName}** Anda yang belum terbayar.\n\n" .
                        "📌 *Detail Tagihan:*\n" .
                        "• No. Invoice: #{$invoice->invoice_number}\n" .
                        "• Jumlah: Rp " . number_format($invoice->amount, 0, ',', '.') . "\n" .
                        "• Jatuh Tempo: " . $invoice->due_date->format('d M Y') . "\n\n" .
-                       "Silakan lakukan pembayaran melalui portal pelanggan kami:\n" .
-                       route('login') . "\n\n" .
+                       "Silakan lakukan pembayaran melalui link berikut:\n" .
+                       route('customer.invoices.index') . "\n\n" .
                        "Terima kasih.";
         }
 
@@ -644,6 +652,8 @@ HTML;
         $successCount = 0;
         $failCount = 0;
 
+        $appName = \App\Models\Setting::getValue('app_name', 'Idrisiyyah Net');
+
         foreach ($invoices as $invoice) {
             $customer = $invoice->customer;
             if (!$customer || !$customer->phone) {
@@ -653,18 +663,18 @@ HTML;
 
             if ($invoice->status === 'paid') {
                 $message = "Halo *{$customer->user->name}*,\n\n" .
-                           "Pembayaran tagihan internet **Idrisiyyah Net** #{$invoice->invoice_number} sebesar *Rp " . number_format($invoice->amount, 0, ',', '.') . "* telah kami terima.\n\n" .
+                           "Pembayaran tagihan internet **{$appName}** #{$invoice->invoice_number} sebesar *Rp " . number_format($invoice->amount, 0, ',', '.') . "* telah kami terima.\n\n" .
                            "Layanan internet Anda aktif secara normal. Terima kasih atas kepercayaan Anda!\n\n" .
-                           "-- Idrisiyyah Net --";
+                           "-- {$appName} --";
             } else {
                 $message = "Halo *{$customer->user->name}*,\n\n" .
-                           "Ini adalah pengingat tagihan internet **Idrisiyyah Net** Anda yang belum terbayar.\n\n" .
+                           "Ini adalah pengingat tagihan internet **{$appName}** Anda yang belum terbayar.\n\n" .
                            "📌 *Detail Tagihan:*\n" .
                            "• No. Invoice: #{$invoice->invoice_number}\n" .
                            "• Jumlah: Rp " . number_format($invoice->amount, 0, ',', '.') . "\n" .
                            "• Jatuh Tempo: " . $invoice->due_date->format('d M Y') . "\n\n" .
-                           "Silakan lakukan pembayaran melalui portal pelanggan kami:\n" .
-                           route('login') . "\n\n" .
+                           "Silakan lakukan pembayaran melalui link berikut:\n" .
+                           route('customer.invoices.index') . "\n\n" .
                            "Terima kasih.";
             }
 

@@ -42,6 +42,8 @@ class InvoicePaidNotification extends Notification
         $payment = $this->invoice->payments->first();
         $paymentMethod = $payment ? strtoupper($payment->payment_method) : 'MANUAL';
 
+        $appName = Setting::getValue('app_name', 'Idrisiyyah Net');
+
         return (new MailMessage)
             ->subject('Pembayaran Sukses - Tagihan Lunas - ' . $this->invoice->invoice_number)
             ->greeting('Halo, ' . $notifiable->name . '!')
@@ -52,7 +54,7 @@ class InvoicePaidNotification extends Notification
             ->line('Status Tagihan: LUNAS / PAID')
             ->action('Lihat Detail Tagihan', $url)
             ->line('Terima kasih atas pembayaran Anda. Berkas kwitansi resmi lunas telah dilampirkan pada email ini.')
-            ->line('Terima kasih telah setia menggunakan layanan Idrisiyyah Net!')
+            ->line("Terima kasih telah setia menggunakan layanan {$appName}!")
             ->attachData($pdfData, 'kwitansi_' . $this->invoice->invoice_number . '.pdf', [
                 'mime' => 'application/pdf',
             ]);
