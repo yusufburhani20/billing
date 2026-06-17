@@ -42,6 +42,36 @@ class InvoiceController extends Controller
                 'payment_proof' => $path,
             ]);
 
+            // 1. Send WA notification to admin_wa
+            $adminWa = \App\Models\Setting::getValue('admin_wa');
+            $customerName = $invoice->customer->user->name ?? 'Pelanggan';
+            $amountFormatted = number_format($invoice->amount, 0, ',', '.');
+            
+            $waMessage = "🚨 *Bukti Transfer Baru Diunggah*\n\n" .
+                         "Pelanggan *{$customerName}* telah mengunggah bukti pembayaran.\n\n" .
+                         "📄 *No. Invoice:* {$invoice->invoice_number}\n" .
+                         "💰 *Jumlah:* Rp {$amountFormatted}\n" .
+                         "📅 *Jatuh Tempo:* " . ($invoice->due_date ? $invoice->due_date->format('d M Y') : '-') . "\n\n" .
+                         "Silakan login ke panel admin untuk memverifikasi:\n" . route('login');
+
+            if ($adminWa) {
+                $waService = new \App\Services\WhatsAppService();
+                $waService->sendMessage($adminWa, $waMessage);
+            }
+
+            // 2. Send Email notification to admin_email
+            $adminEmail = \App\Models\Setting::getValue('admin_email');
+            if ($adminEmail) {
+                \Illuminate\Support\Facades\Notification::route('mail', $adminEmail)
+                    ->notify(new \App\Notifications\AdminPaymentProofUploadedNotification($invoice));
+            } else {
+                // Fallback to all admin users if admin_email is not configured
+                $admins = \App\Models\User::where('role', 'admin')->get();
+                foreach ($admins as $admin) {
+                    $admin->notify(new \App\Notifications\AdminPaymentProofUploadedNotification($invoice));
+                }
+            }
+
             return redirect()->back()->with('message', 'Bukti transfer berhasil diunggah. Menunggu verifikasi admin.');
         }
 

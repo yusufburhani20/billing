@@ -38,6 +38,8 @@ export default function Index({ settings, deployLog = '' }: Props) {
         favicon: null as File | null,
         enable_email_notifications: settings.enable_email_notifications || 'yes',
         enable_wa_notifications: settings.enable_wa_notifications || 'yes',
+        admin_wa: settings.admin_wa || '',
+        admin_email: settings.admin_email || '',
     });
 
     const handleSetActiveTab = (tab: string) => {
@@ -281,6 +283,32 @@ export default function Index({ settings, deployLog = '' }: Props) {
                                                     htmlFor="email-notif-switch"
                                                     className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-indigo-600 cursor-pointer"
                                                 ></label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="md:col-span-2 border-t border-gray-100 dark:border-gray-700 pt-6">
+                                        <h4 className="text-[10px] font-black text-gray-900 dark:text-white uppercase tracking-widest mb-4">Notifikasi Bukti Pembayaran (Admin)</h4>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div>
+                                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 block ml-1">Nomor WA Admin Notifikasi</label>
+                                                <input 
+                                                    type="text" 
+                                                    value={data.admin_wa}
+                                                    onChange={e => setData('admin_wa', e.target.value)}
+                                                    className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-700 border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                                                    placeholder="628xxxxxxxxx"
+                                                />
+                                                <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mt-1.5">Gunakan format kode negara (misal: 628123456789)</p>
+                                            </div>
+                                            <div>
+                                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3 block ml-1">Email Admin Notifikasi</label>
+                                                <input 
+                                                    type="email" 
+                                                    value={data.admin_email}
+                                                    onChange={e => setData('admin_email', e.target.value)}
+                                                    className="w-full px-6 py-4 bg-gray-50 dark:bg-gray-700 border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                                                    placeholder="admin@example.com"
+                                                />
                                             </div>
                                         </div>
                                     </div>
