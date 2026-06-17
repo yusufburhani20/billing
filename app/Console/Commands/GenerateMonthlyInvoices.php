@@ -5,7 +5,7 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use App\Models\Customer;
 use App\Models\Invoice;
-use App\Services\WhatsAppService;
+use App\Jobs\SendWhatsAppMessageJob;
 use App\Notifications\InvoiceCreatedNotification;
 use Illuminate\Support\Str;
 
@@ -14,12 +14,9 @@ class GenerateMonthlyInvoices extends Command
     protected $signature = 'billing:generate';
     protected $description = 'Generate monthly invoices for customers based on their billing date';
 
-    protected $wa;
-
-    public function __construct(WhatsAppService $wa)
+    public function __construct()
     {
         parent::__construct();
-        $this->wa = $wa;
     }
 
     public function handle()
@@ -37,6 +34,7 @@ class GenerateMonthlyInvoices extends Command
             ->get();
 
         $count = 0;
+        $waDelay = 0;
         foreach ($customers as $customer) {
             // Check if invoice already exists
             $exists = Invoice::where('customer_id', $customer->id)
@@ -73,7 +71,8 @@ class GenerateMonthlyInvoices extends Command
                                route('customer.invoices.index') . "\n\n" .
                                "Terima kasih.";
                     
-                    $this->wa->sendMessage($customer->phone, $message);
+                    SendWhatsAppMessageJob::dispatch($customer->phone, $message)->delay(now()->addSeconds($waDelay));
+                    $waDelay += 3;
                 }
             }
         }

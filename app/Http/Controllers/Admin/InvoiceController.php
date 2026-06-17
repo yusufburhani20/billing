@@ -6,8 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\Customer;
 use App\Models\Payment;
-use App\Services\WhatsAppService;
 use App\Services\MikrotikService;
+use App\Jobs\SendWhatsAppMessageJob;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
@@ -17,12 +17,10 @@ use Illuminate\Support\Facades\Notification;
 
 class InvoiceController extends Controller
 {
-    protected $wa;
     protected $mikrotik;
 
-    public function __construct(WhatsAppService $wa, MikrotikService $mikrotik)
+    public function __construct(MikrotikService $mikrotik)
     {
-        $this->wa = $wa;
         $this->mikrotik = $mikrotik;
     }
 
@@ -102,7 +100,7 @@ class InvoiceController extends Controller
                        "Silakan lakukan pembayaran melalui link berikut:\n" .
                        route('customer.invoices.index') . "\n\n" .
                        "Terima kasih.";
-            $this->wa->sendMessage($customer->phone, $message);
+            SendWhatsAppMessageJob::dispatch($customer->phone, $message);
         }
 
         return redirect()->back()->with('message', 'Tagihan berhasil dibuat dan dikirim ke pelanggan.');
@@ -123,6 +121,7 @@ class InvoiceController extends Controller
             ->get();
 
         $count = 0;
+        $waDelay = 0;
         foreach ($customers as $customer) {
             // Check if invoice already exists for this month/year
             $exists = Invoice::where('customer_id', $customer->id)
@@ -145,7 +144,6 @@ class InvoiceController extends Controller
                 if ($customer->user && $customer->user->email) {
                     try {
                         $customer->user->notify(new InvoiceCreatedNotification($invoice));
-                        usleep(500000); // Protective throttling delay
                     } catch (\Exception $e) {
                         \Log::error('Error sending bulk generated invoice email: ' . $e->getMessage());
                     }
@@ -164,7 +162,8 @@ class InvoiceController extends Controller
                                route('customer.invoices.index') . "\n\n" .
                                "Terima kasih.";
                     
-                    $this->wa->sendMessage($customer->phone, $message);
+                    SendWhatsAppMessageJob::dispatch($customer->phone, $message)->delay(now()->addSeconds($waDelay));
+                    $waDelay += 3;
                 }
             }
         }
@@ -211,7 +210,7 @@ class InvoiceController extends Controller
                        "Pembayaran tagihan #{$invoice->invoice_number} sebesar *Rp " . number_format($invoice->amount, 0, ',', '.') . "* telah kami terima.\n\n" .
                        "Layanan internet Anda telah aktif kembali. Selamat menikmati!\n\n" .
                        "-- {$appName} --";
-            $this->wa->sendMessage($customer->phone, $message);
+            SendWhatsAppMessageJob::dispatch($customer->phone, $message);
         }
 
         // SEND EMAIL CONFIRMATION
@@ -612,13 +611,9 @@ HTML;
                        "Terima kasih.";
         }
 
-        $sent = $this->wa->sendMessage($customer->phone, $message);
+        SendWhatsAppMessageJob::dispatch($customer->phone, $message);
 
-        if ($sent) {
-            return redirect()->back()->with('message', 'Notifikasi WhatsApp berhasil dikirim ke pelanggan.');
-        }
-
-        return redirect()->back()->with('error', 'Gagal mengirim pesan WhatsApp. Pastikan gateway WA aktif.');
+        return redirect()->back()->with('message', 'Notifikasi WhatsApp telah dimasukkan ke antrean pengiriman.');
     }
 
     public function sendEmail(Invoice $invoice)
@@ -632,10 +627,10 @@ HTML;
 
         try {
             $customer->user->notify(new InvoiceCreatedNotification($invoice));
-            return redirect()->back()->with('message', 'Notifikasi Email berhasil dikirim ke pelanggan.');
+            return redirect()->back()->with('message', 'Notifikasi Email telah dimasukkan ke antrean pengiriman.');
         } catch (\Exception $e) {
             \Log::error('Error sending invoice email: ' . $e->getMessage());
-            return redirect()->back()->with('error', 'Gagal mengirim email: ' . $e->getMessage());
+            return redirect()->back()->with('error', 'Gagal memasukkan email ke antrean: ' . $e->getMessage());
         }
     }
 
@@ -650,14 +645,13 @@ HTML;
         $invoices = Invoice::with(['customer.user', 'customer.package'])->whereIn('id', $ids)->get();
 
         $successCount = 0;
-        $failCount = 0;
+        $waDelay = 0;
 
         $appName = \App\Models\Setting::getValue('app_name', 'Idrisiyyah Net');
 
         foreach ($invoices as $invoice) {
             $customer = $invoice->customer;
             if (!$customer || !$customer->phone) {
-                $failCount++;
                 continue;
             }
 
@@ -678,19 +672,12 @@ HTML;
                            "Terima kasih.";
             }
 
-            $sent = $this->wa->sendMessage($customer->phone, $message);
-            if ($sent) {
-                $successCount++;
-            } else {
-                $failCount++;
-            }
+            SendWhatsAppMessageJob::dispatch($customer->phone, $message)->delay(now()->addSeconds($waDelay));
+            $waDelay += 3;
+            $successCount++;
         }
 
-        if ($failCount > 0) {
-            return redirect()->back()->with('error', "Pengiriman masal selesai dengan peringatan: {$successCount} pesan berhasil dikirim, {$failCount} pesan gagal dikirim.");
-        }
-
-        return redirect()->back()->with('message', "Sukses mengirimkan {$successCount} notifikasi WhatsApp secara masal.");
+        return redirect()->back()->with('message', "Sukses memasukkan {$successCount} notifikasi WhatsApp ke antrean pengiriman.");
     }
 
     public function bulkSendEmail(Request $request)
@@ -704,32 +691,22 @@ HTML;
         $invoices = Invoice::with(['customer.user'])->whereIn('id', $ids)->get();
 
         $successCount = 0;
-        $failCount = 0;
 
         foreach ($invoices as $invoice) {
             $customer = $invoice->customer;
             if (!$customer || !$customer->user || !$customer->user->email) {
-                $failCount++;
                 continue;
             }
 
             try {
                 $customer->user->notify(new InvoiceCreatedNotification($invoice));
                 $successCount++;
-                
-                // Throttling sleep (0.5 seconds) to protect SMTP server
-                usleep(500000);
             } catch (\Exception $e) {
                 \Log::error('Error in bulk invoice email: ' . $e->getMessage());
-                $failCount++;
             }
         }
 
-        if ($failCount > 0) {
-            return redirect()->back()->with('error', "Pengiriman masal selesai dengan peringatan: {$successCount} email berhasil dikirim, {$failCount} email gagal dikirim.");
-        }
-
-        return redirect()->back()->with('message', "Sukses mengirimkan {$successCount} notifikasi Email secara masal.");
+        return redirect()->back()->with('message', "Sukses memasukkan {$successCount} notifikasi Email ke antrean pengiriman.");
     }
 
     public function rejectPayment(Invoice $invoice)

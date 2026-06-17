@@ -55,8 +55,7 @@ class InvoiceController extends Controller
                          "Silakan login ke panel admin untuk memverifikasi:\n" . route('login');
 
             if ($adminWa) {
-                $waService = new \App\Services\WhatsAppService();
-                $waService->sendMessage($adminWa, $waMessage);
+                \App\Jobs\SendWhatsAppMessageJob::dispatch($adminWa, $waMessage);
             }
 
             // 2. Send Email notification to admin_email

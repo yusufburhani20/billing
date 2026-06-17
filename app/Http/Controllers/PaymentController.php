@@ -8,7 +8,7 @@ use App\Models\Customer;
 use App\Notifications\InvoicePaidNotification;
 use App\Services\MidtransService;
 use App\Services\MikrotikService;
-use App\Services\WhatsAppService;
+use App\Jobs\SendWhatsAppMessageJob;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
@@ -16,13 +16,11 @@ class PaymentController extends Controller
 {
     protected $midtrans;
     protected $mikrotik;
-    protected $wa;
 
-    public function __construct(MidtransService $midtrans, MikrotikService $mikrotik, WhatsAppService $wa)
+    public function __construct(MidtransService $midtrans, MikrotikService $mikrotik)
     {
         $this->midtrans = $midtrans;
         $this->mikrotik = $mikrotik;
-        $this->wa = $wa;
     }
 
     /**
@@ -103,7 +101,7 @@ class PaymentController extends Controller
                            "Pembayaran tagihan #{$invoice->invoice_number} sebesar *Rp " . number_format($invoice->amount, 0, ',', '.') . "* telah kami terima.\n\n" .
                            "Layanan internet Anda telah aktif kembali. Selamat berinternet!\n\n" .
                            "-- {$appName} --";
-                $this->wa->sendMessage($customer->phone, $message);
+                SendWhatsAppMessageJob::dispatch($customer->phone, $message);
             }
 
             // SEND EMAIL NOTIFICATION

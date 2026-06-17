@@ -6,10 +6,10 @@ use App\Models\Invoice;
 use App\Models\Setting;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Notifications\Notification;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Barryvdh\DomPDF\Facade\Pdf;
 
-class InvoicePaidNotification extends Notification
+class InvoicePaidNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 

@@ -12,13 +12,12 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
 
+use App\Jobs\SendWhatsAppMessageJob;
+
 class DashboardController extends Controller
 {
-    protected $wa;
-
-    public function __construct(WhatsAppService $wa)
+    public function __construct()
     {
-        $this->wa = $wa;
     }
 
     public function index(Request $request)
@@ -122,7 +121,7 @@ class DashboardController extends Controller
                        route('customer.invoices.index') . "\n\n" .
                        "Terima kasih.\n" .
                        "-- {$appName} --";
-            $this->wa->sendMessage($customer->phone, $message);
+            SendWhatsAppMessageJob::dispatch($customer->phone, $message);
         }
 
         return redirect()->back()->with('message', 'Paket dipilih! Tagihan Anda sudah terbit, silakan lakukan pembayaran.');

@@ -8,13 +8,12 @@ use App\Models\TicketMessage;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
+use App\Jobs\SendWhatsAppMessageJob;
+
 class TicketController extends Controller
 {
-    protected $wa;
-
-    public function __construct(\App\Services\WhatsAppService $wa)
+    public function __construct()
     {
-        $this->wa = $wa;
     }
 
     public function index()
@@ -48,9 +47,7 @@ class TicketController extends Controller
             'status' => 'open',
         ]);
 
-        // Fetch all admins
-        $admins = \App\Models\User::where('role', 'admin')->get();
-
+        $delay = 0;
         foreach ($admins as $admin) {
             // Send Email Notification
             if ($admin->email) {
@@ -69,7 +66,8 @@ class TicketController extends Controller
                            "📝 *Deskripsi:*\n{$ticket->description}\n\n" .
                            "Segera login untuk memproses keluhan ini:\n" . route('login');
 
-                $this->wa->sendMessage($admin->phone, $message);
+                SendWhatsAppMessageJob::dispatch($admin->phone, $message)->delay(now()->addSeconds($delay));
+                $delay += 2;
             }
         }
 
