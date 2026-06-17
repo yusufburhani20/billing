@@ -43,11 +43,11 @@ class InvoiceController extends Controller
                 'payment_proof' => $path,
             ]);
 
-            // 1. Send WA notification to admin_wa
-            $adminWa = \App\Models\Setting::getValue('admin_wa');
-            $customerName = $invoice->customer->user->name ?? 'Pelanggan';
-            $amountFormatted = number_format($invoice->amount, 0, ',', '.');
-            
+            // 1. Kirim WA ke admin
+            // Prioritas 1: gunakan nomor admin_wa dari Pengaturan
+            // Prioritas 2 (fallback): kirim ke semua user admin yang punya nomor HP
+            $customerName     = $invoice->customer->user->name ?? 'Pelanggan';
+            $amountFormatted  = number_format($invoice->amount, 0, ',', '.');
             $waMessage = "🚨 *Bukti Transfer Baru Diunggah*\n\n" .
                          "Pelanggan *{$customerName}* telah mengunggah bukti pembayaran.\n\n" .
                          "📄 *No. Invoice:* {$invoice->invoice_number}\n" .
@@ -55,8 +55,24 @@ class InvoiceController extends Controller
                          "📅 *Jatuh Tempo:* " . ($invoice->due_date ? $invoice->due_date->format('d M Y') : '-') . "\n\n" .
                          "Silakan login ke panel admin untuk memverifikasi:\n" . route('login');
 
-            if ($adminWa) {
-                \App\Jobs\SendWhatsAppMessageJob::dispatch($adminWa, $waMessage);
+            $adminWaTargets  = [];
+            $adminWaSetting  = \App\Models\Setting::getValue('admin_wa');
+            if ($adminWaSetting) {
+                $adminWaTargets[] = $adminWaSetting;
+            } else {
+                // Fallback: ambil nomor HP semua user admin
+                $adminWaTargets = \App\Models\User::where('role', 'admin')
+                    ->whereNotNull('phone')
+                    ->where('phone', '!=', '')
+                    ->pluck('phone')
+                    ->toArray();
+                if (empty($adminWaTargets)) {
+                    \Log::warning('Notifikasi WA bukti transfer tidak dikirim: setting admin_wa kosong dan tidak ada user admin dengan nomor HP.');
+                }
+            }
+
+            foreach ($adminWaTargets as $waTarget) {
+                \App\Jobs\SendWhatsAppMessageJob::dispatch($waTarget, $waMessage);
             }
 
             // 2. Send Email notification to admin_email
