@@ -10,7 +10,8 @@ import {
     User as UserIcon,
     X,
     Lock,
-    Mail
+    Mail,
+    Phone
 } from 'lucide-react';
 import { useState, FormEvent } from 'react';
 
@@ -18,6 +19,7 @@ interface User {
     id: number;
     name: string;
     email: string;
+    phone?: string;
     role: 'admin' | 'customer';
     created_at: string;
 }
@@ -34,6 +36,7 @@ export default function Index({ users }: Props) {
     const { data, setData, post, put, delete: destroy, processing, reset, errors } = useForm({
         name: '',
         email: '',
+        phone: '',
         password: '',
         role: 'customer' as 'admin' | 'customer',
     });
@@ -49,6 +52,7 @@ export default function Index({ users }: Props) {
         setData({
             name: user.name,
             email: user.email,
+            phone: user.phone || '',
             password: '',
             role: user.role,
         });
@@ -141,6 +145,11 @@ export default function Index({ users }: Props) {
                                                     <div className="text-xs font-bold text-gray-400 flex items-center gap-1">
                                                         <Mail className="w-3 h-3" /> {user.email}
                                                     </div>
+                                                    {user.phone && (
+                                                        <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1 mt-0.5">
+                                                            <Phone className="w-3 h-3" /> {user.phone}
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
                                         </td>
@@ -219,6 +228,21 @@ export default function Index({ users }: Props) {
                                         />
                                     </div>
                                     {errors.email && <p className="text-[9px] text-rose-500 font-bold mt-2 ml-1 uppercase">{errors.email}</p>}
+                                </div>
+
+                                <div>
+                                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 block ml-1">Nomor WhatsApp</label>
+                                    <div className="relative">
+                                        <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
+                                        <input 
+                                            type="text" 
+                                            value={data.phone}
+                                            onChange={e => setData('phone', e.target.value)}
+                                            className="w-full pl-12 pr-4 py-4 bg-gray-50 dark:bg-gray-700 border-none rounded-2xl text-xs font-bold focus:ring-2 focus:ring-indigo-500 dark:text-white"
+                                            placeholder="628xxxxxxxxx"
+                                        />
+                                    </div>
+                                    {errors.phone && <p className="text-[9px] text-rose-500 font-bold mt-2 ml-1 uppercase">{errors.phone}</p>}
                                 </div>
 
                                 <div>
