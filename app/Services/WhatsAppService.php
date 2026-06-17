@@ -39,8 +39,10 @@ class WhatsAppService
             $refId = strtoupper(substr(md5(uniqid()), 0, 6));
             $message .= "\n\n_Ref ID: {$refId}_";
 
-            $response = Http::post($this->baseUrl, [
-                'number' => $target,
+            // 5. Kirim pesan ke gateway dengan timeout 5 detik
+            //    agar jika gateway mati, tidak menggantung request selama 60 detik (default)
+            $response = Http::timeout(5)->post($this->baseUrl, [
+                'number'  => $target,
                 'message' => $message,
             ]);
 
