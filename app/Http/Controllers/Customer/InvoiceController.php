@@ -61,10 +61,10 @@ class InvoiceController extends Controller
             // 2. Send Email notification to admin_email
             $adminEmail = \App\Models\Setting::getValue('admin_email');
             if ($adminEmail) {
-                \Illuminate\Support\Facades\Notification::route('mail', $adminEmail)
-                    ->notify(new \App\Notifications\AdminPaymentProofUploadedNotification($invoice));
+                // Dispatch as a background job using queued notification to a named email
+                \App\Jobs\SendAdminPaymentProofEmailJob::dispatch($invoice->id, $adminEmail);
             } else {
-                // Fallback to all admin users if admin_email is not configured
+                // Fallback: dispatch notification to each admin user
                 $admins = \App\Models\User::where('role', 'admin')->get();
                 foreach ($admins as $admin) {
                     $admin->notify(new \App\Notifications\AdminPaymentProofUploadedNotification($invoice));
