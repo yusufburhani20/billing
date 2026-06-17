@@ -26,7 +26,8 @@ class InvoiceController extends Controller
     public function uploadProof(Request $request, Invoice $invoice)
     {
         $request->validate([
-            'payment_proof' => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            // Client sudah mengompresi gambar jadi JPEG, batas 5MB sebagai safety net
+            'payment_proof' => 'required|image|mimes:jpeg,png,jpg,webp|max:5120',
         ]);
 
         if ($request->hasFile('payment_proof')) {
