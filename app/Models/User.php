@@ -17,6 +17,21 @@ class User extends Authenticatable
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
 
+    protected static function booted()
+    {
+        static::saving(function ($user) {
+            if ($user->isDirty('phone')) {
+                $user->phone = Customer::formatPhoneNumber($user->phone);
+            }
+        });
+
+        static::saved(function ($user) {
+            if ($user->isDirty('phone') && $user->customer && $user->customer->phone !== $user->phone) {
+                $user->customer->update(['phone' => $user->phone]);
+            }
+        });
+    }
+
     /**
      * Get the attributes that should be cast.
      *

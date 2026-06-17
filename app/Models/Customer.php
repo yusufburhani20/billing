@@ -25,6 +25,37 @@ class Customer extends Model
                 $customer->customer_code = $datePrefix . str_pad($nextNumber, 3, '0', STR_PAD_LEFT);
             }
         });
+
+        static::saving(function ($customer) {
+            if ($customer->isDirty('phone')) {
+                $customer->phone = self::formatPhoneNumber($customer->phone);
+            }
+        });
+
+        static::saved(function ($customer) {
+            if ($customer->isDirty('phone') && $customer->user && $customer->user->phone !== $customer->phone) {
+                $customer->user->update(['phone' => $customer->phone]);
+            }
+        });
+    }
+
+    public static function formatPhoneNumber($phone)
+    {
+        if (empty($phone)) {
+            return null;
+        }
+        
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+        
+        if (str_starts_with($phone, '0')) {
+            $phone = '62' . substr($phone, 1);
+        }
+        
+        if (str_starts_with($phone, '8')) {
+            $phone = '62' . $phone;
+        }
+        
+        return $phone;
     }
 
     protected $fillable = [

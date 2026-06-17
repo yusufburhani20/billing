@@ -174,6 +174,11 @@ export default function Index({ customers, available_users, packages, routers }:
                                                 <div className="text-[11px] text-gray-400 mt-1 truncate max-w-[150px]">
                                                     <MapPin className="inline w-3 h-3 mr-1" /> {customer.address}
                                                 </div>
+                                                {customer.phone && (
+                                                    <div className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1 font-bold">
+                                                        <Phone className="w-3 h-3" /> {customer.phone}
+                                                    </div>
+                                                )}
                                             </td>
                                             <td className="px-6 py-5 text-center">
                                                 {customer.status === 'active' && (
