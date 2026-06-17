@@ -28,6 +28,10 @@ class GenerateMonthlyInvoices extends Command
         $month = now()->month;
         $year = now()->year;
 
+        $periodStart = now()->setDate($year, $month, 1)->startOfMonth();
+        $periodEnd = $periodStart->copy()->endOfMonth();
+        $dueDate = $periodStart->copy()->day(20)->startOfDay();
+
         $customers = Customer::with(['user', 'package'])->where('billing_date', $today)
             ->where('status', '!=', 'inactive')
             ->get();
@@ -43,9 +47,11 @@ class GenerateMonthlyInvoices extends Command
             if (!$exists) {
                 $invoice = Invoice::create([
                     'customer_id' => $customer->id,
-                    'amount' => $customer->package->price,
+                    'amount' => $customer->package->price ?? 0,
                     'status' => 'unpaid',
-                    'due_date' => now()->setDay(20)->startOfDay(),
+                    'period_start' => $periodStart,
+                    'period_end' => $periodEnd,
+                    'due_date' => $dueDate,
                 ]);
                 $count++;
 

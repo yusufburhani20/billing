@@ -68,11 +68,17 @@ class InvoiceController extends Controller
             return redirect()->back()->with('error', 'Tagihan untuk pelanggan ini pada bulan & tahun tersebut sudah diterbitkan.');
         }
 
+        $periodStart = now()->setDate($validated['year'], $validated['month'], 1)->startOfMonth();
+        $periodEnd = $periodStart->copy()->endOfMonth();
+        $dueDate = $periodStart->copy()->day(20)->startOfDay();
+
         $invoice = Invoice::create([
             'customer_id' => $customer->id,
-            'amount' => $customer->package->price,
+            'amount' => $customer->package->price ?? 0,
             'status' => 'unpaid',
-            'due_date' => now()->setDay(20)->startOfDay(),
+            'period_start' => $periodStart,
+            'period_end' => $periodEnd,
+            'due_date' => $dueDate,
         ]);
 
         // 1. KIRIM NOTIFIKASI EMAIL
@@ -104,6 +110,10 @@ class InvoiceController extends Controller
         $month = now()->month;
         $year = now()->year;
 
+        $periodStart = now()->setDate($year, $month, 1)->startOfMonth();
+        $periodEnd = $periodStart->copy()->endOfMonth();
+        $dueDate = $periodStart->copy()->day(20)->startOfDay();
+
         $customers = Customer::with(['user', 'package'])
             ->whereNotNull('package_id')
             ->where('status', '!=', 'inactive')
@@ -120,9 +130,11 @@ class InvoiceController extends Controller
             if (!$exists) {
                 $invoice = Invoice::create([
                     'customer_id' => $customer->id,
-                    'amount' => $customer->package->price,
+                    'amount' => $customer->package->price ?? 0,
                     'status' => 'unpaid',
-                    'due_date' => now()->setDay(20)->startOfDay(),
+                    'period_start' => $periodStart,
+                    'period_end' => $periodEnd,
+                    'due_date' => $dueDate,
                 ]);
                 $count++;
 
